@@ -92,6 +92,22 @@
       flex-wrap: wrap;
     }
 
+    /* 取得のボタンと設定のあいだの区切り（TODO-013） */
+    .controls-sep {
+      width: 1px;
+      height: 1.5rem;
+      background-color: var(--panel-border);
+    }
+
+    /* 制限時間の選択欄を、枠線だけのボタンに揃える（TODO-013） */
+    #time-limit-select {
+      background-color: transparent;
+    }
+
+    #time-limit-select option {
+      background-color: var(--bg-secondary);
+    }
+
     select, button, input[type="text"], textarea {
       font-family: inherit;
       font-size: 0.9rem;
@@ -330,7 +346,12 @@
     .input-field-wrapper {
       position: relative;
       display: flex;
-      align-items: center;
+      align-items: stretch;
+      gap: 0.75rem;
+    }
+
+    #btn-restart {
+      flex-shrink: 0;
     }
 
     #typing-input {
@@ -499,6 +520,14 @@
       .stats-panel {
         grid-template-columns: repeat(3, 1fr);
       }
+      /* 入力欄の幅を削らないよう、リセットは次の行へ回す（TODO-013） */
+      .input-field-wrapper {
+        flex-wrap: wrap;
+      }
+      /* 折り返すと行の端に残るので、区切りは出さない */
+      .controls-sep {
+        display: none;
+      }
     }
   </style>
 </head>
@@ -514,6 +543,8 @@
     <div class="controls-bar">
       <button id="btn-fetch-news" class="btn-outline" title="Claude・NHKの最新ニュースを取得・更新"></button>
 
+      <span class="controls-sep" aria-hidden="true"></span>
+
       <select id="time-limit-select" title="制限時間を設定">
         <option value="0">時間無制限</option>
         <option value="30" selected>30秒</option>
@@ -521,8 +552,6 @@
         <option value="180">3分</option>
         <option value="300">5分</option>
       </select>
-
-      <button id="btn-restart" class="btn-outline" title="最初からやり直す"></button>
 
       <button id="btn-sound" class="btn-outline" title="サウンド切替"></button>
 
@@ -609,6 +638,7 @@
           autocapitalize="off" 
           spellcheck="false"
         >
+        <button id="btn-restart" class="btn-outline" title="最初からやり直す"></button>
       </div>
     </div>
   </main>
