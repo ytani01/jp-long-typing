@@ -1046,11 +1046,6 @@
             }
           } else if (val === 'news-summary') {
             this.loadNewsSummary();
-          } else if (val.startsWith('news-')) {
-            const idx = parseInt(val.replace('news-', ''), 10);
-            if (this.newsArticles[idx]) {
-              this.loadArticle(this.newsArticles[idx]);
-            }
           } else {
             const idx = parseInt(val, 10);
             this.currentArticleIndex = idx;
@@ -1191,12 +1186,14 @@
               .replace(/&hellip;/g, '…')
               .replace(/\.\.\./g, '…')
               .replace(/^[　\s]+|[　\s]+$/g, '');
+            // 要約は 100 字前後で「…」と切れる。最後の「。」まで残し、「。」が無ければ見出しだけにする（TODO-010）
+            const desc = cleanDesc.endsWith('…') ? cleanDesc.slice(0, cleanDesc.lastIndexOf('。') + 1) : cleanDesc;
             const cleanTitle = (item.title || '')
               .replace(/^[　\s]+|[　\s]+$/g, '');
             return {
               title: cleanTitle,
               author: 'NHKニュース',
-              text: `${cleanTitle}。\n${cleanDesc}`
+              text: desc ? `${cleanTitle}。\n${desc}` : `${cleanTitle}。`
             };
           });
           const untouched = this.isUntouchedSummary('news-summary');
@@ -1266,30 +1263,10 @@
         this.isSummary = true;
       }
 
+      // 個別の記事は短いので、選択欄にはまとめだけを置く（TODO-010）
       applyNewsData(articles) {
         this.newsArticles = articles;
-        if (!this.dom.optgroupNews) return;
-
-        // 作り直すと選択中の option が消えて先頭に戻るので、選択を覚えておく
-        const prevValue = this.dom.presetSelect.value;
-        this.dom.optgroupNews.innerHTML = '';
-
-        // Summary item (all news combined)
-        const summaryOpt = document.createElement('option');
-        summaryOpt.value = 'news-summary';
-        summaryOpt.textContent = `📰 NHK主要ニュースまとめ (${articles.length}本)`;
-        this.dom.optgroupNews.appendChild(summaryOpt);
-
-        // Individual article items
-        articles.forEach((art, i) => {
-          const opt = document.createElement('option');
-          opt.value = `news-${i}`;
-          opt.textContent = `・${art.title.slice(0, 24)}${art.title.length > 24 ? '…' : ''}`;
-          this.dom.optgroupNews.appendChild(opt);
-        });
-        if ([...this.dom.presetSelect.options].some(o => o.value === prevValue)) {
-          this.dom.presetSelect.value = prevValue;
-        }
+        this.dom.optgroupNews.querySelector('option[value="news-summary"]').textContent = `📰 NHK主要ニュースまとめ (${articles.length}本)`;
       }
 
       loadNewsSummary() {
