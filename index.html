@@ -142,9 +142,10 @@
     .stats-panel {
       background-color: var(--bg-secondary);
       border-bottom: 1px solid var(--panel-border);
-      padding: 0.75rem 1.5rem;
+      /* 本文の列（main の幅 980px）に揃える（TODO-012） */
+      padding: 0.75rem max(1.5rem, calc((100% - 980px) / 2 + 1.5rem));
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      grid-template-columns: repeat(5, 1fr);
       gap: 0.75rem;
       text-align: center;
       flex-shrink: 0;
@@ -296,6 +297,13 @@
       font-weight: 700;
     }
 
+    /* 誤入力のあいだ、今の文字を赤くする（TODO-012） */
+    .char.active.miss {
+      background-color: var(--error-color);
+      box-shadow: 0 0 0 2px var(--error-color);
+      color: #fff;
+    }
+
     .char.pending {
       color: var(--text-muted);
       opacity: 0.85;
@@ -317,14 +325,6 @@
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
-    }
-
-    .input-instruction {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.85rem;
-      color: var(--text-muted);
     }
 
     .input-field-wrapper {
@@ -359,22 +359,6 @@
       20%, 80% { transform: translate3d(2px, 0, 0); }
       30%, 50%, 70% { transform: translate3d(-3px, 0, 0); }
       40%, 60% { transform: translate3d(3px, 0, 0); }
-    }
-
-    /* Current Target Word Preview */
-    .target-preview {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 1.05rem;
-      padding: 0.4rem 0.2rem;
-      color: var(--text-muted);
-    }
-
-    .target-preview-text {
-      color: var(--accent-color);
-      font-weight: 600;
-      letter-spacing: 0.05em;
     }
 
     /* Modals */
@@ -558,7 +542,7 @@
     </div>
     <div class="stat-item">
       <span class="stat-label">進捗</span>
-      <span class="stat-value" id="stat-progress">0%</span>
+      <span class="stat-value" id="stat-progress">0/0</span>
     </div>
     <div class="stat-item">
       <span class="stat-label">正確率</span>
@@ -613,22 +597,13 @@
       <!-- Characters will be injected here -->
     </div>
 
-    <!-- Next / Target Preview -->
-    <div class="target-preview">
-      <span>次の入力目安:</span>
-      <span class="target-preview-text" id="target-preview-text">...</span>
-    </div>
-
     <!-- Typing Input Box -->
     <div class="typing-input-card">
-      <div class="input-instruction">
-        <span>💡 日本語IMEをONにして入力し、確定（Enter）してください。句読点や英数字もそのまま入力できます。</span>
-      </div>
       <div class="input-field-wrapper">
         <input 
           type="text" 
           id="typing-input" 
-          placeholder="ここに入力を始めると計測が始まります" 
+          placeholder="IMEをONにして入力すると計測が始まります" 
           autocomplete="off" 
           autocorrect="off" 
           autocapitalize="off" 
@@ -986,7 +961,6 @@
           articleAuthor: document.getElementById('article-author'),
           charTotalCount: document.getElementById('char-total-count'),
           textDisplay: document.getElementById('text-display'),
-          targetPreviewText: document.getElementById('target-preview-text'),
           typingInput: document.getElementById('typing-input'),
           statTime: document.getElementById('stat-time'),
           statCpm: document.getElementById('stat-cpm'),
@@ -1079,12 +1053,6 @@
           this.sound.init();
           isComposing = true;
           this.ensureTimerStarted();
-        });
-
-        this.dom.typingInput.addEventListener('compositionupdate', (e) => {
-          this.sound.init();
-          this.ensureTimerStarted();
-          this.updateTargetPreview();
         });
 
         this.dom.typingInput.addEventListener('compositionend', (e) => {
@@ -1326,14 +1294,13 @@
         this.dom.statTime.classList.remove('danger');
 
         this.dom.statCpm.innerHTML = '0 <span style="font-size: 0.8rem; font-weight: normal; color: var(--text-muted);">文字/分</span>';
-        this.dom.statProgress.textContent = '0%';
+        this.dom.statProgress.textContent = `0/${this.cleanText.length}`;
         this.dom.statAccuracy.textContent = '100%';
         this.dom.statMistakes.textContent = '0';
         this.dom.statMistakes.style.color = 'var(--text-muted)';
         this.dom.progressBar.style.width = '0%';
 
         this.renderText();
-        this.updateTargetPreview();
         this.dom.typingInput.focus({ preventScroll: true });
       }
 
@@ -1424,22 +1391,14 @@
         }
       }
 
-      updateTargetPreview() {
-        if (this.currentIndex >= this.cleanText.length) {
-          this.dom.targetPreviewText.textContent = "完了！";
-          return;
-        }
-
-        // Show next 15 characters
-        const preview = this.cleanText.slice(this.currentIndex, this.currentIndex + 20).replace(/\n/g, ' ↵ ');
-        this.dom.targetPreviewText.textContent = preview;
-      }
-
       handleInputCommit() {
         if (this.isFinished) return;
 
         let inputVal = this.dom.typingInput.value;
-        if (!inputVal) return;
+        if (!inputVal) {
+          this.markMiss(false);
+          return;
+        }
 
         // Auto-skip line breaks in cleanText if next char is newline
         while (this.currentIndex < this.cleanText.length && this.cleanText[this.currentIndex] === '\n') {
@@ -1453,6 +1412,7 @@
 
         // Check how many characters match the text starting from currentIndex
         let matchedCount = 0;
+        let consumed = 0; // 入力欄から削る文字数。読み飛ばした改行は入らない
         let hasMismatch = false;
 
         for (let i = 0; i < inputVal.length; i++) {
@@ -1474,6 +1434,7 @@
           // Normalize compare (handle fullwidth / halfwidth spaces or punctuation)
           if (this.isCharMatch(inputChar, targetChar)) {
             matchedCount++;
+            consumed++;
           } else {
             hasMismatch = true;
             break;
@@ -1488,11 +1449,10 @@
           this.sound.playConfirm();
 
           // Clear the matched part from input
-          this.dom.typingInput.value = inputVal.slice(matchedCount);
+          this.dom.typingInput.value = inputVal.slice(consumed);
           this.dom.typingInput.classList.remove('error');
 
           this.updateCharClasses();
-          this.updateTargetPreview();
           this.updateTimerAndStats();
 
           if (this.currentIndex >= this.cleanText.length) {
@@ -1510,6 +1470,16 @@
           }, 350);
           this.updateTimerAndStats();
         }
+        this.markMiss(hasMismatch);
+      }
+
+      // 入力欄に誤りが残っているあいだ、お手本の今の文字に印を付ける
+      markMiss(on) {
+        const el = this.charElements[this.currentIndex];
+        if (!el) return;
+        // 先頭の改行を読み飛ばした直後は、まだ改行に active が付いている
+        if (on && !el.classList.contains('active')) this.updateCharClasses();
+        el.classList.toggle('miss', on);
       }
 
       isCharMatch(a, b) {
@@ -1557,7 +1527,7 @@
 
         // Progress
         const percent = Math.min(100, Math.floor((this.currentIndex / this.cleanText.length) * 100));
-        this.dom.statProgress.textContent = `${percent}% (${this.currentIndex}/${this.cleanText.length})`;
+        this.dom.statProgress.textContent = `${this.currentIndex}/${this.cleanText.length}`;
         this.dom.progressBar.style.width = `${percent}%`;
 
         // Accuracy
@@ -1574,6 +1544,7 @@
 
       finish(isTimeUp = false) {
         this.isFinished = true;
+        this.markMiss(false);
         if (this.timerInterval) {
           clearInterval(this.timerInterval);
           this.timerInterval = null;
