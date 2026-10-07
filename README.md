@@ -11,8 +11,8 @@
   - 入力・変換・確定をくり返して長文を打ち進める、実務・執筆に即した実践スタイル。
   - 文節や句読点ごとにスムーズに入力確定が可能。
 - **Claudeニュース自動取得機能**:
-  - 起動時と「ニュース更新」で、[Claude Platform リリースノート](https://platform.claude.com/docs/ja/release-notes/overview)の新しい 3 日分と、[Claude Code の CHANGELOG](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md) の最新版の先頭 8 項目（英語）を取得。
-  - リリースノートは CORS を許していないため、公開の CORS プロキシ（allorigins）を経由する。取得できないときは内蔵のデータを使う。
+  - 起動時と「ニュース更新」で、[Claude Code の CHANGELOG](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md) の最新版の先頭 8 項目（英語）を取得。取得できないときは内蔵のデータを使う。
+  - [Claude Platform リリースノート](https://platform.claude.com/docs/en/release-notes/overview)の新しい 3 日分は、日本語に訳して `index.html` に埋め込んである。CORS を許していないのでブラウザでは取得しない。更新は Claude Code の `/update-release-notes` で行う。
   - Markdown のリンク・コード・強調の記法は外して練習文にする。
 - **NHKニュース自動取得機能**:
   - オンライン起動時に最新のNHKニュースRSSフィードを自動取得。

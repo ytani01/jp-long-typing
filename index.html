@@ -786,7 +786,7 @@
       {
         title: "日本語長文タイピングの特徴",
         author: "日本語長文タイピング",
-        text: `日本語長文タイピングは、ブラウザで開くだけで使える日本語の長文タイピング練習アプリです。外部ライブラリもビルドも要らず、HTML ファイル 1 つで動きます。\n入力、変換、確定をくり返して長文を打ち進めます。文節や句読点ごとに確定してかまいません。英数字や記号は、形が同じなら全角でも半角でも正解になります。\n練習文は、Claude のニュース、NHK ニュース、青空文庫の名作から選べます。Claude のニュースは Claude Platform のリリースノートと Claude Code の CHANGELOG です。ニュースは起動時と「ニュース更新」で最新のものを取得し、取得できないときは内蔵のデータを使います。好きな文章を貼り付けて練習することもできます。\n制限時間は 30 秒、1 分、3 分、5 分、無制限から選べます。経過時間、CPM、進捗率、正確率、ミス打鍵数をリアルタイムで表示し、終わると成績を SS、S、A、B、C のランクで評価します。\nダークモードとライトモードを切り替えられ、打鍵音や確定音は Web Audio API で鳴らします。`
+        text: `日本語長文タイピングは、ブラウザで開くだけで使える日本語の長文タイピング練習アプリです。外部ライブラリもビルドも要らず、HTML ファイル 1 つで動きます。\n入力、変換、確定をくり返して長文を打ち進めます。文節や句読点ごとに確定してかまいません。英数字や記号は、形が同じなら全角でも半角でも正解になります。\n練習文は、Claude のニュース、NHK ニュース、青空文庫の名作から選べます。Claude のニュースは Claude Platform のリリースノートと Claude Code の CHANGELOG です。リリースノートは日本語に訳して内蔵しています。CHANGELOG と NHK ニュースは起動時と「ニュース更新」で最新のものを取得し、取得できないときは内蔵のデータを使います。好きな文章を貼り付けて練習することもできます。\n制限時間は 30 秒、1 分、3 分、5 分、無制限から選べます。経過時間、CPM、進捗率、正確率、ミス打鍵数をリアルタイムで表示し、終わると成績を SS、S、A、B、C のランクで評価します。\nダークモードとライトモードを切り替えられ、打鍵音や確定音は Web Audio API で鳴らします。`
       },
       {
         title: "走れメロス",
@@ -828,31 +828,32 @@
 
     /* ========================================================
        CLAUDE NEWS (TODO-005)
-       リリースノートは CORS を許していないので公開の CORS プロキシを通す。
+       リリースノートは CORS を許していないので、ブラウザでは取得せず
+       update-release-notes skill で訳して埋め込む（TODO-017）。
        Claude Code の CHANGELOG は英語のみで、CORS を許している
        ======================================================== */
-    const CLAUDE_NOTES_URL = 'https://api.allorigins.win/raw?url='
-      + encodeURIComponent('https://platform.claude.com/docs/ja/release-notes/overview.md');
     const CLAUDE_CODE_URL = 'https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md';
 
-    // 取得に失敗したとき用（2026-10-07 時点の内容）
-    const FALLBACK_CLAUDE_NOTES = [
+    // update-release-notes skill が書き換える（2026-10-08 時点の内容）
+    const CLAUDE_NOTES = [
       {
-        "title": "2026年9月28日の更新",
+        "title": "2026年10月8日の更新",
         "author": "Claude Platform リリースノート",
-        "text": "Claude Sonnet 5.5（claude-sonnet-5-5）をリリースしました。Claude API、Claude in Amazon Bedrock、Claude Platform on AWS、Claude on Google Cloud、Claude in Microsoft Foundryで利用できます。「context window」（コンテキストウィンドウ）、出力制限、価格については、Claude Sonnet 5.5モデルページを参照してください。\nClaude Sonnet 5向けに書かれたコードは、Claude Sonnet 5.5では5つの点で動作しなくなる可能性があります。事前の思考をオフにするには、high effort以下で、\"disabled\"の代わりにthinking: {\"type\": \"between_tools\"}を送信してください。強制的な「tool use」（ツール使用）（tool_choiceのタイプanyおよびtool）は400エラーを返します。思考ブロックはモデルと会話に紐付けられます。Claude APIとGoogle Cloudでは、以前のcomputer_20251124 computer useツールは受け付けられません。advisorツールは、Claude Opus 4.8、Claude Opus 4.7、Claude Sonnet 5をadvisorとして拒否します。各変更についてはClaude Sonnet 5.5の新機能を、変更前後のリクエストについては移行ガイドを参照してください。モデル固有のプロンプトパターンについては、Claude Sonnet 5.5へのプロンプトを参照してください。\n思考ブロックのうちClaude Sonnet 5.5が生成したものは、それを生成したアカウント、またはそのアカウントにリンクされたアカウントでのみ機能します。別のアカウントがこれらのブロックのいずれかを送信すると、APIはモデルがそのブロックを参照する前に削除し、リクエストは成功します。以前のモデルのブロックは影響を受けません。保持された思考を参照してください。"
+        "text": "Compliance APIのチャットのエンドポイントが、統合されたClaudeのチャットも返すようになりました。Claude Enterpriseの組織向けのベータ版で、今のCompliance Access Keyのまま使えます。チャット、ファイル、プロジェクトの取得と削除を参照してください。"
       },
       {
-        "title": "2026年9月24日の更新",
+        "title": "2026年10月7日の更新",
         "author": "Claude Platform リリースノート",
-        "text": "stop_details.categoryが\"bio\"、\"frontier_llm\"、または\"reasoning_extraction\"の場合に、出力前に発生する「refusal」（拒否）への課金を再開します。これらは、誤検知の発生量が少ないと測定されているカテゴリです。ストリーミング途中の拒否はすでに課金対象でした。この変更により課金される拒否は、他のリクエストと同様に、それを実行したモデルの料金で請求されます。その他のカテゴリで出力前に発生した拒否は引き続き課金されず、フォールバッククレジットにも変更はありません。この変更はすべてのプラットフォームに適用されます。拒否の課金方法を参照してください。\nCompliance APIのローカルセッションエンドポイントは、Excel、PowerPoint、Word、OutlookにおけるClaude for Microsoft 365セッション（office_agentsで始まるproduct_surface値）についてベータ版を終了しました。ユーザーのマシン上のセッションを参照してください。\nCompliance APIのアクティビティフィードは、ファイル名、プロジェクトドキュメント名、アーティファクトのタイトルを返さなくなりました。ファイル、プロジェクトドキュメント、アーティファクトのアクティビティにおけるfilenameおよびtitleフィールドは、この変更前に記録されたアクティビティを含め、常に空になるか、省略されるようになりました。アクティビティのIDから名前やタイトルを調べるには、read:compliance_user_dataスコープを持つCompliance Access Keyを使用してください。Activityオブジェクトを理解するを参照してください。"
+        "text": "Claude Sonnet 5.5のプロンプトキャッシュの読み取り料金を、100万トークンあたり$0.20 USDから$0.10 USDに値下げしました。基本の入力料金の0.1倍から0.05倍になります。キャッシュの書き込みとその他の料金は変わりません。プロンプトキャッシュの料金を参照してください。\nClaude Haiku 5.5（claude-haiku-5-5）をリリースしました。大量の処理や応答の速さが求められる作業向けに調整した、最も高性能なモデルです。100万トークンのコンテキストウィンドウ、最大128kトークンの出力、effortパラメーター付きのadaptive thinkingを備えています。Claude API、Claude in Amazon Bedrock、Claude Platform on AWS、Claude on Google Cloud、Claude in Microsoft Foundryで利用できます。Claude Haiku 5.5の新機能を参照してください。\nClaude Haiku 4.5向けに書かれたコードは、Claude Haiku 5.5では動かなくなることがあります。手動のextended thinking（budget_tokens）は400エラーを返し、adaptive thinkingが既定で有効なので、応答がthinkingブロックから始まることがあります。同じ文章でもトークン数が多く数えられます。移行ガイドを参照してください。モデル固有のプロンプトのパターンは、Claude Haiku 5.5へのプロンプトを参照してください。\nPythonとTypeScriptのSDKに、browser useツールとcomputer useツールのクラスがベータ版で加わりました。クラスを継承し、自分のブラウザーやデスクトップの自動化に合わせてツールごとにメソッドを1つ書きます。ツールのループ、ブラウザーに設定したURLとファイルのポリシー、承認のコールバックはSDKが実行します。SDKのツールセットによるbrowser useとcomputer useを参照してください。\nClaudeのMaxプランとTeamプランに、毎月のAPIクレジットが含まれるようになりました。受け取り方は、MaxプランとTeamプランのAPIクレジットを参照してください。\nClaude Managed Agentsで、limitedネットワークのクラウド環境が、allowed_hostsをweb_searchツールとweb_fetchツールにも適用するようになりました。allowed_hostsに合わないホストのURLをweb_fetchで呼ぶと、エージェントにurl_not_allowedのエラー結果が返ります。web_searchは、そのようなホストの結果を除きます。allowed_hostsにホストが1つも無いときは、どちらのツールもページや検索結果を返しません。allow_package_managersとallow_mcp_serversは、これらのツールにホストを足しません。ツールからホストに届くようにするには、そのホストをallowed_hostsに足してください。サンドボックスからも届くようになります。unrestrictedネットワークとセルフホストの環境では、これらのツールは制限されません。環境のネットワークを参照してください。\nlimitedネットワークでは、有効なウェブツールのallowed_domainsにallowed_hostsに含まれない項目があると、セッションの作成が400エラーで失敗します。そのような項目を足すセッションの更新も同じです。allowed_hostsの項目は、*.で始まらない限り1つのホストにだけ一致するので、docs.example.comは[\"example.com\"]に含まれません。エラーを直すには、そのホストをallowed_hostsに足すか、allowed_domainsからその項目を外してください。web searchとweb fetchのドメインを制限するを参照してください。"
       },
       {
-        "title": "2026年9月23日の更新",
+        "title": "2026年10月6日の更新",
         "author": "Claude Platform リリースノート",
-        "text": "キャッシュ診断はClaude APIでベータ版を終了し、cache-diagnosis-2026-04-07ベータヘッダーが不要になりました。オプトインするには、Messagesリクエストにdiagnosticsオブジェクトを含めてください。引き続きヘッダーを送信するリクエストは従来どおり動作します。POST /v1/messagesからのレスポンスには常にdiagnosticsフィールドが含まれるようになり、リクエストにdiagnosticsオブジェクトが含まれていない場合、このフィールドはnullになります。"
+        "text": "Models APIにcapabilities.server_toolsを追加しました。GET /v1/modelsとGET /v1/models/{model_id}が、各モデルがweb searchツールとcode executionツールを受け付けるかを返すようになりました。モデルがcode executionツールを受け付けるかは、capabilities.server_tools.code_executionで確かめてください。最上位のcapabilities.code_executionは、コードからリクエストのほかのツールを呼べるかを表します。Models APIの使い方を参照してください。"
       }
     ];
+
+    // CHANGELOG を取得できないとき用
     const FALLBACK_CLAUDE_CODE = {
       "title": "Claude Code 2.1.292",
       "author": "Claude Code CHANGELOG",
@@ -1119,7 +1120,7 @@
         setButton(this.dom.btnTheme, 'moon');
         // 内蔵のデータで始め、裏で最新を取得する
         this.applyNewsData(FALLBACK_NHK_NEWS);
-        this.applyClaudeData(FALLBACK_CLAUDE_NOTES, FALLBACK_CLAUDE_CODE);
+        this.applyClaudeData(CLAUDE_NOTES, FALLBACK_CLAUDE_CODE);
         this.loadArticle(PRESETS[0], '0');
         this.fetchNhkNews();
         this.fetchClaudeNews();
@@ -1250,14 +1251,14 @@
         }
       }
 
-      // 「ニュース更新」: 両方を取り直して Claude ニュースのまとめを出す
+      // 「ニュース更新」: 両方を取り直して CHANGELOG を出す（リリースノートは取り直さない。TODO-017）
       async refreshNews() {
         setButton(this.dom.btnFetchNews, 'news', '取得中...');
         const [nhkOk, claudeOk] = await Promise.all([this.fetchNhkNews(), this.fetchClaudeNews()]);
         setButton(this.dom.btnFetchNews, 'news', 'ニュース更新');
-        this.dom.presetSelect.value = 'claude-summary';
-        this.loadClaudeSummary();
-        const failed = [!claudeOk && 'Claudeニュース', !nhkOk && 'NHKニュース'].filter(Boolean);
+        this.dom.presetSelect.value = 'claude-code';
+        this.loadArticle(this.claudeCode);
+        const failed = [!claudeOk && 'Claude Code CHANGELOG', !nhkOk && 'NHKニュース'].filter(Boolean);
         if (failed.length > 0) {
           alert(`${failed.join('・')}の取得に失敗したため、内蔵のデータか前回取得したデータを使います。`);
         }
@@ -1302,32 +1303,22 @@
         }
       }
 
-      // リリースノートと CHANGELOG を別々に取り、取れなかった方は今のデータのまま
+      // CHANGELOG だけを取る。リリースノートは埋め込んだものを使う（TODO-017）
       async fetchClaudeNews() {
-        const [notesRes, codeRes] = await Promise.allSettled([
-          fetchText(CLAUDE_NOTES_URL).then(md => parseSections(md, '### ', 3, Infinity)),
-          fetchText(CLAUDE_CODE_URL).then(md => parseSections(md, '## ', 1, 8))
-        ]);
-        const notesOk = notesRes.status === 'fulfilled' && notesRes.value.length > 0;
-        const codeOk = codeRes.status === 'fulfilled' && codeRes.value.length > 0;
-        if (!notesOk) console.warn('Claude Platform リリースノートの取得に失敗しました:', notesRes.reason);
-        if (!codeOk) console.warn('Claude Code CHANGELOG の取得に失敗しました:', codeRes.reason);
-        if (!notesOk && !codeOk) return false;
-
-        const notes = notesOk ? notesRes.value.map(sec => ({
-          title: `${sec.heading}の更新`,
-          author: 'Claude Platform リリースノート',
-          text: sec.items.join('\n')
-        })) : this.claudeNotes;
-        const code = codeOk ? {
-          title: `Claude Code ${codeRes.value[0].heading}`,
-          author: 'Claude Code CHANGELOG',
-          text: codeRes.value[0].items.join('\n')
-        } : this.claudeCode;
-        const untouched = this.isUntouchedSummary('claude-summary');
-        this.applyClaudeData(notes, code);
-        if (untouched) this.loadClaudeSummary();
-        return notesOk && codeOk;
+        try {
+          const sections = parseSections(await fetchText(CLAUDE_CODE_URL), '## ', 1, 8);
+          if (sections.length === 0) throw new Error('No sections');
+          const code = {
+            title: `Claude Code ${sections[0].heading}`,
+            author: 'Claude Code CHANGELOG',
+            text: sections[0].items.join('\n')
+          };
+          this.applyClaudeData(this.claudeNotes, code);
+          return true;
+        } catch (e) {
+          console.warn('Claude Code CHANGELOG の取得に失敗しました:', e);
+          return false;
+        }
       }
 
       applyClaudeData(notes, code) {

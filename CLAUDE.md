@@ -9,6 +9,8 @@
   外部ライブラリ・CDN を足さない（音も Web Audio API で作っている）
 - NHK ニュースの取得に失敗しても、内蔵のフォールバック（`FALLBACK_NHK_NEWS`）で
   動くようにする
+- Claude Platform リリースノートはブラウザで取得しない。`update-release-notes`
+  skill で訳して `CLAUDE_NOTES` に埋め込む（TODO-017）
 
 ## 確認の手順
 
