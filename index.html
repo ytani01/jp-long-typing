@@ -162,6 +162,17 @@
       font-weight: 700;
       color: var(--accent-color);
       font-variant-numeric: tabular-nums;
+      transition: color 0.2s;
+    }
+
+    .stat-value.danger {
+      color: var(--error-color) !important;
+      animation: pulse-danger 0.8s ease-in-out infinite;
+    }
+
+    @keyframes pulse-danger {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(1.05); }
     }
 
     .progress-bar-container {
@@ -507,12 +518,31 @@
 
     <div class="controls-bar">
       <select id="preset-select" title="文章を選択">
-        <option value="0">太宰治『走れメロス』</option>
-        <option value="1">中島敦『山月記』</option>
-        <option value="2">夏目漱石『吾輩は猫である』</option>
-        <option value="3">宮沢賢治『注文の多い料理店』</option>
-        <option value="4">芥川龍之介『羅生門』</option>
-        <option value="custom">✏️ 自分で文章を貼り付ける...</option>
+        <optgroup label="文学名作">
+          <option value="0">太宰治『走れメロス』</option>
+          <option value="1">中島敦『山月記』</option>
+          <option value="2">夏目漱石『吾輩は猫である』</option>
+          <option value="3">宮沢賢治『注文の多い料理店』</option>
+          <option value="4">芥川龍之介『羅生門』</option>
+        </optgroup>
+        <optgroup id="optgroup-news" label="📰 NHKニュース">
+          <option value="news-summary">📰 NHK主要ニュースまとめ</option>
+        </optgroup>
+        <optgroup label="カスタム">
+          <option value="custom">✏️ 自分で文章を貼り付ける...</option>
+        </optgroup>
+      </select>
+
+      <button id="btn-fetch-news" class="btn-outline" title="NHK最新ニュースを取得・更新">
+        📰 ニュース更新
+      </button>
+
+      <select id="time-limit-select" title="制限時間を設定">
+        <option value="0">⏱️ 時間無制限</option>
+        <option value="30">⏱️ 30秒</option>
+        <option value="60">⏱️ 1分</option>
+        <option value="180">⏱️ 3分</option>
+        <option value="300">⏱️ 5分</option>
       </select>
 
       <button id="btn-restart" class="btn-outline" title="最初からやり直す">
@@ -532,7 +562,7 @@
   <!-- Realtime Stats Panel -->
   <section class="stats-panel">
     <div class="stat-item">
-      <span class="stat-label">経過時間</span>
+      <span class="stat-label" id="label-time">経過時間</span>
       <span class="stat-value" id="stat-time">00:00</span>
     </div>
     <div class="stat-item">
@@ -623,7 +653,7 @@
   <div class="modal-overlay" id="result-modal">
     <div class="modal-card">
       <div class="modal-header">
-        <h2>🎉 タイピング完了！</h2>
+        <h2 id="res-modal-title">🎉 タイピング完了！</h2>
         <button class="modal-close" id="btn-close-result">&times;</button>
       </div>
 
@@ -686,6 +716,27 @@
         title: "羅生門",
         author: "芥川龍之介",
         text: `ある日の暮方の事である。一人の下人が、羅生門の下で雨やみを待っていた。広い門の下には、この男のほかに誰もいない。ただ、所々丹塗の剥げた、大きな円柱に、蟋蟀が一匹とまっている。羅生門が、朱雀大路にある以上は、この男のほかにも、雨やみをする市女笠や揉烏帽子が、もう二三人はありそうなものである。それが、この男のほかには誰もいない。なぜかと云うと、この二三年、京都には、地震とか辻風とか火事とか饑饉とかいう災いがつづいて起った。そこで洛中のさびれ方は一通りではない。旧記によると、仏像や仏具を打ち砕いて、その薪にするような始末である。洛中がその始末であるから、羅生門の修理などは、元より誰も捨てて顧みる者がなかった。するとその荒れ果てたのをよい事にして、狐狸が棲む。盗人が棲む。とうとうしまいには、引取り手のない死人を、この門へ持って来て、棄てて行くと云う習慣さえ出来た。そこで、日の目が見えなくなると、誰でも気味を悪がって、この門の近所へは足ぶみをしないことになってしまったのである。`
+      }
+    ];
+
+    /* ========================================================
+       FALLBACK NHK NEWS (オフライン / 通信エラー時用)
+       ======================================================== */
+    const FALLBACK_NHK_NEWS = [
+      {
+        title: "大手ビールメーカー4社を強制調査 価格カルテル疑い 公取委",
+        author: "NHKニュース",
+        text: "国内の大手ビールメーカー4社が出荷するビールの値上げ幅などを事前に示し合わせるカルテルを結んだ疑いがあるとして、公正取引委員会は独占禁止法違反の疑いで強制調査を始め、各社の本社を一斉に捜索しています。"
+      },
+      {
+        title: "新潟 6人死亡菓子工場火災 三幸製菓の当時の幹部4人在宅起訴へ",
+        author: "NHKニュース",
+        text: "新潟県にある菓子メーカー「三幸製菓」の工場が全焼して従業員6人が死亡した火災で、新潟地方検察庁が、当時の代表取締役ら幹部4人を、安全対策を怠ったとして業務上過失致死の罪で在宅起訴する方針を固めました。"
+      },
+      {
+        title: "簗農相「法令に従い適正に処理」シャトルバス報道受け",
+        author: "NHKニュース",
+        text: "簗農林水産大臣は、選挙活動中に、手配したシャトルバスで自身の支持者を無料で送迎したことが法令違反にあたるのではないかなどと一部で報じられたことについて、記者団に対し「法令に従い、適正に処理している」と述べました。"
       }
     ];
 
@@ -788,6 +839,8 @@
       constructor() {
         this.sound = new SoundEffects();
         this.currentArticleIndex = 0;
+        this.timeLimit = 0; // 0 = unlimited, otherwise in seconds
+        this.newsArticles = [];
         this.article = PRESETS[0];
         this.fullText = "";
         this.cleanText = ""; // Normalized text
@@ -805,6 +858,10 @@
           btnRestart: document.getElementById('btn-restart'),
           btnSound: document.getElementById('btn-sound'),
           btnTheme: document.getElementById('btn-theme'),
+          btnFetchNews: document.getElementById('btn-fetch-news'),
+          timeLimitSelect: document.getElementById('time-limit-select'),
+          labelTime: document.getElementById('label-time'),
+          optgroupNews: document.getElementById('optgroup-news'),
           articleTitle: document.getElementById('article-title'),
           articleAuthor: document.getElementById('article-author'),
           charTotalCount: document.getElementById('char-total-count'),
@@ -824,6 +881,7 @@
           btnCancelCustom: document.getElementById('btn-cancel-custom'),
           btnCloseCustom: document.getElementById('btn-close-custom'),
           resultModal: document.getElementById('result-modal'),
+          resModalTitle: document.getElementById('res-modal-title'),
           resRank: document.getElementById('res-rank'),
           resTime: document.getElementById('res-time'),
           resCpm: document.getElementById('res-cpm'),
@@ -835,7 +893,10 @@
         };
 
         this.bindEvents();
+        this.applyNewsData(FALLBACK_NHK_NEWS, false); // 初期フォールバックニュース設定
         this.loadArticle(this.article);
+        // バックグラウンドで最新ニュースを取得
+        this.fetchNhkNews(true);
       }
 
       bindEvents() {
@@ -844,11 +905,27 @@
           const val = e.target.value;
           if (val === 'custom') {
             this.openCustomModal();
+          } else if (val === 'news-summary') {
+            this.loadNewsSummary();
+          } else if (val.startsWith('news-')) {
+            const idx = parseInt(val.replace('news-', ''), 10);
+            if (this.newsArticles[idx]) {
+              this.loadArticle(this.newsArticles[idx]);
+            }
           } else {
             const idx = parseInt(val, 10);
             this.currentArticleIndex = idx;
             this.loadArticle(PRESETS[idx]);
           }
+        });
+
+        // News fetch button
+        this.dom.btnFetchNews.addEventListener('click', () => this.fetchNhkNews(false));
+
+        // Time limit select
+        this.dom.timeLimitSelect.addEventListener('change', (e) => {
+          this.timeLimit = parseInt(e.target.value, 10);
+          this.restart();
         });
 
         // Controls
@@ -943,13 +1020,97 @@
         }
       }
 
-      loadArticle(art) {
+      async fetchNhkNews(silent = false) {
+        if (!silent && this.dom.btnFetchNews) {
+          this.dom.btnFetchNews.textContent = '⏳ 取得中...';
+        }
+
+        const rssUrl = encodeURIComponent('https://www.nhk.or.jp/rss/news/cat0.xml');
+        const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${rssUrl}`;
+
+        try {
+          const res = await fetch(apiUrl);
+          if (!res.ok) throw new Error('Fetch failed');
+          const data = await res.json();
+          if (data && data.items && data.items.length > 0) {
+            const articles = data.items.slice(0, 6).map(item => {
+              const cleanDesc = (item.description || '')
+                .replace(/<[^>]*>/g, '')
+                .replace(/&hellip;/g, '…')
+                .replace(/\.\.\./g, '…')
+                .replace(/^[　\s]+|[　\s]+$/g, '');
+              const cleanTitle = (item.title || '')
+                .replace(/^[　\s]+|[　\s]+$/g, '');
+              return {
+                title: cleanTitle,
+                author: 'NHKニュース',
+                text: `${cleanTitle}。\n${cleanDesc}`
+              };
+            });
+            this.applyNewsData(articles, true);
+            if (!silent) {
+              this.dom.presetSelect.value = 'news-summary';
+              this.loadNewsSummary();
+            }
+          } else {
+            throw new Error('No items');
+          }
+        } catch (e) {
+          console.warn('NHKニュースのオンライン取得に失敗したため、キャッシュデータを使用します:', e);
+          this.applyNewsData(FALLBACK_NHK_NEWS, false);
+          if (!silent) {
+            this.dom.presetSelect.value = 'news-summary';
+            this.loadNewsSummary();
+            alert('最新ニュースのオンライン取得に失敗したため、内蔵キャッシュニュースを読み込みました。');
+          }
+        } finally {
+          if (this.dom.btnFetchNews) {
+            this.dom.btnFetchNews.textContent = '📰 ニュース更新';
+          }
+        }
+      }
+
+      applyNewsData(articles, isOnline = true) {
+        this.newsArticles = articles;
+        if (!this.dom.optgroupNews) return;
+
+        this.dom.optgroupNews.innerHTML = '';
+
+        // Summary item (all news combined)
+        const summaryOpt = document.createElement('option');
+        summaryOpt.value = 'news-summary';
+        summaryOpt.textContent = `📰 NHK主要ニュースまとめ (${articles.length}本)`;
+        this.dom.optgroupNews.appendChild(summaryOpt);
+
+        // Individual article items
+        articles.forEach((art, i) => {
+          const opt = document.createElement('option');
+          opt.value = `news-${i}`;
+          opt.textContent = `・${art.title.slice(0, 24)}${art.title.length > 24 ? '…' : ''}`;
+          this.dom.optgroupNews.appendChild(opt);
+        });
+      }
+
+      loadNewsSummary() {
+        if (!this.newsArticles || this.newsArticles.length === 0) return;
+        const combinedText = this.newsArticles.map((a, i) => `【ニュース${i + 1}】${a.text}`).join('\n\n');
+        this.loadArticle({
+          title: 'NHK主要ニュースまとめ',
+          author: 'NHKニュース',
+          text: combinedText
+        }, 'news-summary');
+      }
+
+      loadArticle(art, selectValue = null) {
         this.article = art;
         this.fullText = art.text.trim();
         this.cleanText = this.fullText.replace(/\r\n/g, '\n');
         this.dom.articleTitle.textContent = art.title;
         this.dom.articleAuthor.textContent = `${art.author} （文字数: ${this.cleanText.length}字）`;
         this.dom.charTotalCount.textContent = this.cleanText.length;
+        if (selectValue !== null) {
+          this.dom.presetSelect.value = selectValue;
+        }
         this.restart();
       }
 
@@ -967,7 +1128,19 @@
 
         this.dom.typingInput.value = '';
         this.dom.typingInput.classList.remove('error');
-        this.dom.statTime.textContent = '00:00';
+
+        // Time display setup
+        if (this.timeLimit > 0) {
+          this.dom.labelTime.textContent = '残り時間';
+          const mins = Math.floor(this.timeLimit / 60);
+          const secs = this.timeLimit % 60;
+          this.dom.statTime.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        } else {
+          this.dom.labelTime.textContent = '経過時間';
+          this.dom.statTime.textContent = '00:00';
+        }
+        this.dom.statTime.classList.remove('danger');
+
         this.dom.statCpm.innerHTML = '0 <span style="font-size: 0.8rem; font-weight: normal; color: var(--text-muted);">文字/分</span>';
         this.dom.statProgress.textContent = '0%';
         this.dom.statAccuracy.textContent = '100%';
@@ -1140,13 +1313,33 @@
         if (!this.startTime) return;
 
         const now = Date.now();
-        const elapsedSec = Math.max(1, Math.floor((now - this.startTime) / 1000));
-        const minutes = Math.floor(elapsedSec / 60);
-        const seconds = elapsedSec % 60;
-        this.dom.statTime.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        const elapsedSec = Math.floor((now - this.startTime) / 1000);
+
+        if (this.timeLimit > 0) {
+          const remainingSec = Math.max(0, this.timeLimit - elapsedSec);
+          const minutes = Math.floor(remainingSec / 60);
+          const seconds = remainingSec % 60;
+          this.dom.statTime.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+          if (remainingSec <= 10) {
+            this.dom.statTime.classList.add('danger');
+          } else {
+            this.dom.statTime.classList.remove('danger');
+          }
+
+          if (remainingSec <= 0) {
+            this.finish(true);
+            return;
+          }
+        } else {
+          const minutes = Math.floor(elapsedSec / 60);
+          const seconds = elapsedSec % 60;
+          this.dom.statTime.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
 
         // CPM (Characters Per Minute)
-        const cpm = Math.round((this.correctChars / elapsedSec) * 60);
+        const calcSec = Math.max(1, elapsedSec);
+        const cpm = Math.round((this.correctChars / calcSec) * 60);
         this.dom.statCpm.innerHTML = `${cpm} <span style="font-size: 0.8rem; font-weight: normal; color: var(--text-muted);">文字/分</span>`;
 
         // Progress
@@ -1166,21 +1359,36 @@
         }
       }
 
-      finish() {
+      finish(isTimeUp = false) {
         this.isFinished = true;
         if (this.timerInterval) {
           clearInterval(this.timerInterval);
           this.timerInterval = null;
         }
 
-        this.sound.playComplete();
+        this.dom.statTime.classList.remove('danger');
         this.dom.typingInput.value = '';
         this.dom.typingInput.blur();
 
-        const elapsedSec = Math.max(1, Math.floor((Date.now() - this.startTime) / 1000));
-        const minutes = Math.floor(elapsedSec / 60);
-        const seconds = elapsedSec % 60;
-        const timeStr = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        let elapsedSec = 1;
+        let timeStr = '00:00';
+
+        if (isTimeUp) {
+          this.sound.playError();
+          this.dom.resModalTitle.textContent = '⏰ タイムアップ！';
+          elapsedSec = this.timeLimit;
+          const mins = Math.floor(this.timeLimit / 60);
+          const secs = this.timeLimit % 60;
+          timeStr = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        } else {
+          this.sound.playComplete();
+          this.dom.resModalTitle.textContent = this.timeLimit > 0 ? '🎉 制限時間内にクリア！' : '🎉 タイピング完了！';
+          elapsedSec = Math.max(1, Math.floor((Date.now() - this.startTime) / 1000));
+          const mins = Math.floor(elapsedSec / 60);
+          const secs = elapsedSec % 60;
+          timeStr = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+
         const cpm = Math.round((this.correctChars / elapsedSec) * 60);
         const totalAttempts = this.correctChars + this.mistakesCount;
         const accuracy = totalAttempts > 0 ? Math.round((this.correctChars / totalAttempts) * 100) : 100;
