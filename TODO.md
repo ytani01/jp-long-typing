@@ -6,26 +6,33 @@
 
 ---
 
-## TODO-017. リリースノートの取得で、CORS の中継を順に試す
+## TODO-017. リリースノートを、ブラウザで取得せずに埋め込む
 
 |      | main | 担当 |
 |------|------|------|
 | 見込み | Opus 5.5 / effort medium | main（実装）+ reviewer（Opus / high）+ verifier（Sonnet / medium） |
 
-- [ ] 中継を複数並べ、失敗したら次を試す形にする
-- [ ] 1 つの中継に待たされすぎないよう、時間の上限を見直す
+- [ ] ブラウザからリリースノート（`CLAUDE_NOTES_URL`）を取得する処理と、allorigins の中継をやめる
+- [ ] 埋め込んだリリースノート（今の `FALLBACK_CLAUDE_NOTES`）を常に使う
+- [ ] プロジェクトの skill を作る。curl で取得し、AI が日本語に訳して `index.html` に埋め込む
+- [ ] `README.md` と `CLAUDE.md` の記述を直す
 
-Claude Platform リリースノート（`CLAUDE_NOTES_URL`）は、CORS ヘッダーを
-返さないので `api.allorigins.win` を中継にしている。2026-10-08 に
-allorigins が 500 やタイムアウトを返し、「Claudeニュースの取得に失敗した」
-の alert が出た。CHANGELOG（raw.githubusercontent.com）は CORS を許して
-いるので対象外。
+Claude Platform リリースノートは CORS ヘッダーを返さないので
+`api.allorigins.win` を中継にしていた。2026-10-08 に allorigins が 500 や
+タイムアウトを返し、「Claudeニュースの取得に失敗した」の alert が出た。
+代わりの中継も使えなかった（`api.codetabs.com` は 503、`corsproxy.io` は
+401）。
 
-同じ日に代わりを curl で試したが、`api.codetabs.com` は 503、
-`corsproxy.io` は 401（キーが要る）で、どれも使えなかった。
+2026-10-08 に利用者と決めたこと:
 
-**決めること:** どの中継を並べるか。着手時に各中継を測り直し、
-使えるものが無ければ利用者に聞く（このまま待つか、見送るか）。
+- リリースノートは、この skill で取得・翻訳・埋め込みし、コミットと
+  push で反映する。「ニュース更新」ボタンでは取得しない
+- Claude Code の CHANGELOG（CORS を許している）と NHK は、今のまま
+  ブラウザで取得する。CHANGELOG は英語のまま
+
+**着手時に確かめること:** 今の取得元は日本語版（`/docs/ja/`）なので、
+訳すのは英語のまま残る部分だけで足りるか。日本語版が英語版より遅れて
+いるなら英語版から訳すか、利用者に聞く。
 
 ---
 
