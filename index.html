@@ -283,11 +283,6 @@
       margin-right: 0.1em;
     }
 
-    .char.linebreak::after {
-      content: "\A";
-      white-space: pre;
-    }
-
     /* Typing Input Box */
     .typing-input-card {
       background-color: var(--bg-secondary);
@@ -1386,6 +1381,8 @@
             word = null;
             inLongWord = false;
             fragment.appendChild(span);
+            // span の外に置かないと、外の行は改行しない（TODO-006）
+            if (char === '\n') fragment.appendChild(document.createElement('br'));
           }
           this.charElements.push(span);
         }
