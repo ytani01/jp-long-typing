@@ -1104,7 +1104,10 @@
       loadArticle(art, selectValue = null) {
         this.article = art;
         this.fullText = art.text.trim();
-        this.cleanText = this.fullText.replace(/\r\n/g, '\n');
+        // 改行以外の空白（全角を含む）を詰め、全角英数字を半角にする（TODO-003）
+        this.cleanText = this.fullText.replace(/\r\n?|[\u2028\u2029]/g, '\n')
+          .replace(/[^\S\n]/g, '')
+          .replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
         this.dom.articleTitle.textContent = art.title;
         this.dom.articleAuthor.textContent = `${art.author} （文字数: ${this.cleanText.length}字）`;
         this.dom.charTotalCount.textContent = this.cleanText.length;
