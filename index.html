@@ -294,7 +294,7 @@
       transition: background-color 0.12s, color 0.12s;
     }
 
-    /* 英単語を途中で折り返さない（TODO-005） */
+    /* 英単語や、句読点と直前の字を途中で折り返さない（TODO-005、TODO-015） */
     .word {
       display: inline-block;
       white-space: nowrap;
@@ -854,6 +854,9 @@
       if (label) btn.append(label);
     }
 
+    // 行の頭に置かない文字（TODO-015）
+    const NO_LINE_START = new Set('、。，．・：；？！）］｝」』】〕〉》〙〗〛｠〟’”｡｣､…‥々ゝゞヽヾ),.!?:;]}');
+
     // 英単語の側の文字か（日本語・改行・空白・文字列の外でない）
     function isWordSide(c) {
       return c !== undefined && !/\s/.test(c) && !isJapanese(c);
@@ -1354,9 +1357,24 @@
             span.textContent = char;
           }
 
-          if (isWordSide(char)) {
-            // 英数字は文字間隔を空けると単語がばらけて読みにくい（TODO-014）
-            span.style.letterSpacing = '0';
+          const last = fragment.lastChild;
+          // 英数字は文字間隔を空けると単語がばらけて読みにくい（TODO-014）
+          if (isWordSide(char)) span.style.letterSpacing = '0';
+          // 「.NET」のように英字が続く記号は単語の頭として扱う
+          if (NO_LINE_START.has(char) && !(isWordSide(char) && (word || inLongWord || isWordSide(this.cleanText[i + 1])))
+              && last && last.nodeName !== 'BR') {
+            // 直前の字か単語とまとめて折り返す（TODO-015）
+            let group = last;
+            if (!group.classList.contains('word')) {
+              group = document.createElement('span');
+              group.className = 'word';
+              fragment.replaceChild(group, last);
+              group.appendChild(last);
+            }
+            group.appendChild(span);
+            word = null;
+            inLongWord = false;
+          } else if (isWordSide(char)) {
             if (!word && !inLongWord) {
               // ponytail: 20 字を超える単語は画面の幅に収まらないことがあるので、まとめずに折り返させる
               let end = i;
