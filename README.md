@@ -8,7 +8,7 @@
 ## 主な特徴
 
 - **実践的な日本語入力・変換対応**:
-  - IME（日本語入力システム）をONにした状態で入力・変換・確定して長文を打ち進める、実務・執筆に即した実践スタイル。
+  - 入力・変換・確定をくり返して長文を打ち進める、実務・執筆に即した実践スタイル。
   - 文節や句読点ごとにスムーズに入力確定が可能。
 - **Claudeニュース自動取得機能**:
   - 起動時と「ニュース更新」で、[Claude Platform リリースノート](https://platform.claude.com/docs/ja/release-notes/overview)の新しい 3 日分と、[Claude Code の CHANGELOG](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md) の最新版の先頭 8 項目（英語）を取得。
