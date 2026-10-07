@@ -1,35 +1,8 @@
 # TODO
 
-**残っている項目: TODO-005、TODO-006。** これまでに 4 件を決着させた。
+**残っている項目: TODO-006。** これまでに 5 件を決着させた。
 新しく足すときは「完了済み」の上に節を作る。
 **新規項目の番号は `TODO-007` から。**
-
----
-
-## TODO-005. 「ニュース更新」で Claude Platform のリリースノートも取得する
-
-|      | main | 担当 |
-|------|------|------|
-| 見込み | Opus 5.5 / effort medium | main（実装）+ reviewer（Opus / high）+ verifier（Sonnet / medium） |
-
-- [ ] 使える公開の CORS プロキシを実測で選ぶ（着手時に、取得できるか・応答の形を測る）
-- [ ] 「ニュース更新」と起動時の取得で、`https://platform.claude.com/docs/ja/release-notes/overview.md`
-      を取得し、新しい日付から数件をお手本にして選択欄に新しい optgroup で出す
-- [ ] 取得に失敗したときは内蔵のフォールバックを使う（`FALLBACK_NHK_NEWS` と同じ考え方）
-- [ ] 選択欄の先頭（NHK ニュースの上）に「Claude ニュース」として出し、起動時の既定を
-      Claude ニュースのまとめにする（NHK まとめから切り替える。起動時の取得後の
-      差し替えも Claude ニュースのまとめで行う）
-- [ ] Claude Code の最新版の変更点も取得する。`https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md`
-      の先頭の版（`## 2.1.292` など）の項目を英文のままお手本にし、「Claude ニュース」の
-      optgroup に入れる（CORS を許しているのでプロキシは通さない。失敗時は内蔵のフォールバック）
-- [ ] README.md に書き足す
-
-利用者の依頼（2026-10-07）。Claude 公式で日本語の取得元はこのリリースノートだけで、
-Anthropic のニュース（英語のみ・RSS 無し）は入れないと利用者が決めた。Claude Code の
-CHANGELOG は日本語版が無い（`code.claude.com/docs/ja/changelog.md` は GitHub へ転送される）が、
-英語のまま入れると後から決めた（2026-10-07）。リリースノートは CORS を許していないので、公開の CORS
-プロキシを経由する（利用者が選んだ）。Markdown のリンク・コード・表記をどこまで
-整えて打ちやすくするかは、着手時に実物を見て決める。
 
 ---
 

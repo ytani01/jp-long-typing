@@ -247,9 +247,16 @@
 
     .char {
       display: inline-block;
+      white-space: pre; /* inline-block の中の空白を幅 0 に潰さない */
       padding: 0 1px;
       border-radius: 3px;
       transition: background-color 0.12s, color 0.12s;
+    }
+
+    /* 英単語を途中で折り返さない（TODO-005） */
+    .word {
+      display: inline-block;
+      white-space: nowrap;
     }
 
     .char.done {
@@ -518,6 +525,9 @@
 
     <div class="controls-bar">
       <select id="preset-select" title="文章を選択">
+        <optgroup id="optgroup-claude" label="🤖 Claudeニュース">
+          <option value="claude-summary">🤖 Claudeニュースまとめ</option>
+        </optgroup>
         <optgroup id="optgroup-news" label="📰 NHKニュース">
           <option value="news-summary">📰 NHK主要ニュースまとめ</option>
         </optgroup>
@@ -536,7 +546,7 @@
         </optgroup>
       </select>
 
-      <button id="btn-fetch-news" class="btn-outline" title="NHK最新ニュースを取得・更新">
+      <button id="btn-fetch-news" class="btn-outline" title="Claude・NHKの最新ニュースを取得・更新">
         📰 ニュース更新
       </button>
 
@@ -749,6 +759,93 @@
     ];
 
     /* ========================================================
+       CLAUDE NEWS (TODO-005)
+       リリースノートは CORS を許していないので公開の CORS プロキシを通す。
+       Claude Code の CHANGELOG は英語のみで、CORS を許している
+       ======================================================== */
+    const CLAUDE_NOTES_URL = 'https://api.allorigins.win/raw?url='
+      + encodeURIComponent('https://platform.claude.com/docs/ja/release-notes/overview.md');
+    const CLAUDE_CODE_URL = 'https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md';
+
+    // 取得に失敗したとき用（2026-10-07 時点の内容）
+    const FALLBACK_CLAUDE_NOTES = [
+      {
+        "title": "2026年9月28日の更新",
+        "author": "Claude Platform リリースノート",
+        "text": "Claude Sonnet 5.5（claude-sonnet-5-5）をリリースしました。Claude API、Claude in Amazon Bedrock、Claude Platform on AWS、Claude on Google Cloud、Claude in Microsoft Foundryで利用できます。「context window」（コンテキストウィンドウ）、出力制限、価格については、Claude Sonnet 5.5モデルページを参照してください。\nClaude Sonnet 5向けに書かれたコードは、Claude Sonnet 5.5では5つの点で動作しなくなる可能性があります。事前の思考をオフにするには、high effort以下で、\"disabled\"の代わりにthinking: {\"type\": \"between_tools\"}を送信してください。強制的な「tool use」（ツール使用）（tool_choiceのタイプanyおよびtool）は400エラーを返します。思考ブロックはモデルと会話に紐付けられます。Claude APIとGoogle Cloudでは、以前のcomputer_20251124 computer useツールは受け付けられません。advisorツールは、Claude Opus 4.8、Claude Opus 4.7、Claude Sonnet 5をadvisorとして拒否します。各変更についてはClaude Sonnet 5.5の新機能を、変更前後のリクエストについては移行ガイドを参照してください。モデル固有のプロンプトパターンについては、Claude Sonnet 5.5へのプロンプトを参照してください。\n思考ブロックのうちClaude Sonnet 5.5が生成したものは、それを生成したアカウント、またはそのアカウントにリンクされたアカウントでのみ機能します。別のアカウントがこれらのブロックのいずれかを送信すると、APIはモデルがそのブロックを参照する前に削除し、リクエストは成功します。以前のモデルのブロックは影響を受けません。保持された思考を参照してください。"
+      },
+      {
+        "title": "2026年9月24日の更新",
+        "author": "Claude Platform リリースノート",
+        "text": "stop_details.categoryが\"bio\"、\"frontier_llm\"、または\"reasoning_extraction\"の場合に、出力前に発生する「refusal」（拒否）への課金を再開します。これらは、誤検知の発生量が少ないと測定されているカテゴリです。ストリーミング途中の拒否はすでに課金対象でした。この変更により課金される拒否は、他のリクエストと同様に、それを実行したモデルの料金で請求されます。その他のカテゴリで出力前に発生した拒否は引き続き課金されず、フォールバッククレジットにも変更はありません。この変更はすべてのプラットフォームに適用されます。拒否の課金方法を参照してください。\nCompliance APIのローカルセッションエンドポイントは、Excel、PowerPoint、Word、OutlookにおけるClaude for Microsoft 365セッション（office_agentsで始まるproduct_surface値）についてベータ版を終了しました。ユーザーのマシン上のセッションを参照してください。\nCompliance APIのアクティビティフィードは、ファイル名、プロジェクトドキュメント名、アーティファクトのタイトルを返さなくなりました。ファイル、プロジェクトドキュメント、アーティファクトのアクティビティにおけるfilenameおよびtitleフィールドは、この変更前に記録されたアクティビティを含め、常に空になるか、省略されるようになりました。アクティビティのIDから名前やタイトルを調べるには、read:compliance_user_dataスコープを持つCompliance Access Keyを使用してください。Activityオブジェクトを理解するを参照してください。"
+      },
+      {
+        "title": "2026年9月23日の更新",
+        "author": "Claude Platform リリースノート",
+        "text": "キャッシュ診断はClaude APIでベータ版を終了し、cache-diagnosis-2026-04-07ベータヘッダーが不要になりました。オプトインするには、Messagesリクエストにdiagnosticsオブジェクトを含めてください。引き続きヘッダーを送信するリクエストは従来どおり動作します。POST /v1/messagesからのレスポンスには常にdiagnosticsフィールドが含まれるようになり、リクエストにdiagnosticsオブジェクトが含まれていない場合、このフィールドはnullになります。"
+      }
+    ];
+    const FALLBACK_CLAUDE_CODE = {
+      "title": "Claude Code 2.1.292",
+      "author": "Claude Code CHANGELOG",
+      "text": "Added --marketplace <source> to claude plugin install: adds the marketplace if needed, under the same policy checks as claude plugin marketplace add, then installs the plugin from it\nAdded an effort parameter to the Agent tool, so Claude runs a sub-agent at the effort level you ask for\nAdded CLAUDE_CODE_OVERLOADED_RETRY_BASE_DELAY_MS environment variable to set a longer base delay for the backoff when retrying an overloaded (529) request\nAdded prompt.autocomplete, an event a mod hooks to add its own rows to the prompt box's autocomplete list\nAdded prompt caching to $.model.complete for mods: prompt and system take blocks of text, and cache: true on a block caches the request up to it\nAdded workflow agents to the agent.spawn mod hook, with their run and index, so a mod can refuse them\nFixed subagent definitions with permissionMode: auto entering auto mode when auto mode is unavailable (disabled by settings, circuit breaker, or a model that doesn't support it)\nFixed sandboxed commands being able to read the staged file copies of /ultrareview uploads under ~/.claude/seed-admin"
+    };
+
+    // Markdown の記法を外して打ちやすくする
+    function stripMarkdown(s) {
+      return s
+        .replace(/\\([\\`*_[\]()<>#!.+-])/g, '$1')
+        .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+        .replace(/[`*]/g, '')
+        .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
+        .trim();
+    }
+
+    // 見出し（"### " や "## "）ごとに、箇条書きの項目を集める
+    function parseSections(md, heading, maxSections, maxItems) {
+      const sections = [];
+      let cur = null;
+      for (const line of md.split('\n')) {
+        if (line.startsWith(heading)) {
+          if (sections.length >= maxSections) break;
+          cur = { heading: line.slice(heading.length).trim(), items: [] };
+          sections.push(cur);
+        } else if (cur && /^[*-] /.test(line) && cur.items.length < maxItems) {
+          cur.items.push(stripMarkdown(line.slice(2)));
+        }
+      }
+      return sections.filter(sec => sec.items.length > 0);
+    }
+
+    // 照合用に、形が同じ字を 1 つにそろえる（全角の英数字・記号は半角に、
+    // “”‘’、ハイフン類と長音、波ダッシュ、全角の空白）。お手本は変えない（TODO-005）
+    function toSameShape(c) {
+      if (c === '“' || c === '”') return '"';
+      if (c === '‘' || c === '’') return "'";
+      if ('−‐‑ー'.includes(c)) return '-';
+      if (c === '〜') return '~';
+      if (c === '　') return ' ';
+      const code = c.charCodeAt(0);
+      return code >= 0xFF01 && code <= 0xFF5E ? String.fromCharCode(code - 0xFEE0) : c;
+    }
+
+    // 日本語の文字か（全角の英数字・記号 U+FF01〜U+FF5E は英単語の側に数える）
+    function isJapanese(c) {
+      return c !== undefined && /[\u3000-\u30ff\u4e00-\u9fff\uff00\uff5f-\uffef]/.test(c);
+    }
+
+    // 英単語の側の文字か（日本語・改行・空白・文字列の外でない）
+    function isWordSide(c) {
+      return c !== undefined && !/\s/.test(c) && !isJapanese(c);
+    }
+
+    async function fetchText(url) {
+      const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.text();
+    }
+
+    /* ========================================================
        SOUND GENERATOR (Web Audio API - No external assets)
        ======================================================== */
     class SoundEffects {
@@ -870,6 +967,7 @@
           timeLimitSelect: document.getElementById('time-limit-select'),
           labelTime: document.getElementById('label-time'),
           optgroupNews: document.getElementById('optgroup-news'),
+          optgroupClaude: document.getElementById('optgroup-claude'),
           articleTitle: document.getElementById('article-title'),
           articleAuthor: document.getElementById('article-author'),
           charTotalCount: document.getElementById('char-total-count'),
@@ -903,10 +1001,12 @@
         // 既定の制限時間は選択欄の selected で決める
         this.timeLimit = parseInt(this.dom.timeLimitSelect.value, 10);
         this.bindEvents();
-        this.applyNewsData(FALLBACK_NHK_NEWS, false); // 初期フォールバックニュース設定
-        this.loadNewsSummary();
-        // バックグラウンドで最新ニュースを取得
-        this.fetchNhkNews(true);
+        // 内蔵のデータで始め、裏で最新を取得する
+        this.applyNewsData(FALLBACK_NHK_NEWS);
+        this.applyClaudeData(FALLBACK_CLAUDE_NOTES, FALLBACK_CLAUDE_CODE);
+        this.loadClaudeSummary();
+        this.fetchNhkNews();
+        this.fetchClaudeNews();
       }
 
       bindEvents() {
@@ -915,6 +1015,15 @@
           const val = e.target.value;
           if (val === 'custom') {
             this.openCustomModal();
+          } else if (val === 'claude-summary') {
+            this.loadClaudeSummary();
+          } else if (val === 'claude-code') {
+            this.loadArticle(this.claudeCode);
+          } else if (val.startsWith('claude-')) {
+            const idx = parseInt(val.replace('claude-', ''), 10);
+            if (this.claudeNotes[idx]) {
+              this.loadArticle(this.claudeNotes[idx]);
+            }
           } else if (val === 'news-summary') {
             this.loadNewsSummary();
           } else if (val.startsWith('news-')) {
@@ -930,7 +1039,7 @@
         });
 
         // News fetch button
-        this.dom.btnFetchNews.addEventListener('click', () => this.fetchNhkNews(false));
+        this.dom.btnFetchNews.addEventListener('click', () => this.refreshNews());
 
         // Time limit select
         this.dom.timeLimitSelect.addEventListener('change', (e) => {
@@ -1030,59 +1139,114 @@
         }
       }
 
-      async fetchNhkNews(silent = false) {
-        if (!silent && this.dom.btnFetchNews) {
-          this.dom.btnFetchNews.textContent = '⏳ 取得中...';
+      // 「ニュース更新」: 両方を取り直して Claude ニュースのまとめを出す
+      async refreshNews() {
+        this.dom.btnFetchNews.textContent = '⏳ 取得中...';
+        const [nhkOk, claudeOk] = await Promise.all([this.fetchNhkNews(), this.fetchClaudeNews()]);
+        this.dom.btnFetchNews.textContent = '📰 ニュース更新';
+        this.dom.presetSelect.value = 'claude-summary';
+        this.loadClaudeSummary();
+        const failed = [!claudeOk && 'Claudeニュース', !nhkOk && 'NHKニュース'].filter(Boolean);
+        if (failed.length > 0) {
+          alert(`${failed.join('・')}の取得に失敗したため、内蔵のデータか前回取得したデータを使います。`);
         }
+      }
 
+      // 打ち始める前で、そのまとめを開いたままなら、取得した内容に差し替える
+      isUntouchedSummary(value) {
+        return this.dom.presetSelect.value === value && this.isSummary && !this.startTime && !this.isFinished;
+      }
+
+      // 成功したら true。失敗したら今のデータのまま false を返す
+      async fetchNhkNews() {
         const rssUrl = encodeURIComponent('https://www.nhk.or.jp/rss/news/cat0.xml');
         const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${rssUrl}`;
 
         try {
-          const res = await fetch(apiUrl);
-          if (!res.ok) throw new Error('Fetch failed');
-          const data = await res.json();
-          if (data && data.items && data.items.length > 0) {
-            const articles = data.items.slice(0, 6).map(item => {
-              const cleanDesc = (item.description || '')
-                .replace(/<[^>]*>/g, '')
-                .replace(/&hellip;/g, '…')
-                .replace(/\.\.\./g, '…')
-                .replace(/^[　\s]+|[　\s]+$/g, '');
-              const cleanTitle = (item.title || '')
-                .replace(/^[　\s]+|[　\s]+$/g, '');
-              return {
-                title: cleanTitle,
-                author: 'NHKニュース',
-                text: `${cleanTitle}。\n${cleanDesc}`
-              };
-            });
-            this.applyNewsData(articles, true);
-            // 起動時の取得は、打ち始める前でニュースまとめのままなら最新に差し替える
-            const untouched = this.isNewsSummary && !this.startTime && !this.isFinished;
-            if (!silent || untouched) {
-              this.dom.presetSelect.value = 'news-summary';
-              this.loadNewsSummary();
-            }
-          } else {
-            throw new Error('No items');
-          }
+          const data = JSON.parse(await fetchText(apiUrl));
+          if (!(data && data.items && data.items.length > 0)) throw new Error('No items');
+          const articles = data.items.slice(0, 6).map(item => {
+            const cleanDesc = (item.description || '')
+              .replace(/<[^>]*>/g, '')
+              .replace(/&hellip;/g, '…')
+              .replace(/\.\.\./g, '…')
+              .replace(/^[　\s]+|[　\s]+$/g, '');
+            const cleanTitle = (item.title || '')
+              .replace(/^[　\s]+|[　\s]+$/g, '');
+            return {
+              title: cleanTitle,
+              author: 'NHKニュース',
+              text: `${cleanTitle}。\n${cleanDesc}`
+            };
+          });
+          const untouched = this.isUntouchedSummary('news-summary');
+          this.applyNewsData(articles);
+          if (untouched) this.loadNewsSummary();
+          return true;
         } catch (e) {
-          console.warn('NHKニュースのオンライン取得に失敗したため、キャッシュデータを使用します:', e);
-          this.applyNewsData(FALLBACK_NHK_NEWS, false);
-          if (!silent) {
-            this.dom.presetSelect.value = 'news-summary';
-            this.loadNewsSummary();
-            alert('最新ニュースのオンライン取得に失敗したため、内蔵キャッシュニュースを読み込みました。');
-          }
-        } finally {
-          if (this.dom.btnFetchNews) {
-            this.dom.btnFetchNews.textContent = '📰 ニュース更新';
-          }
+          console.warn('NHKニュースの取得に失敗しました:', e);
+          return false;
         }
       }
 
-      applyNewsData(articles, isOnline = true) {
+      // リリースノートと CHANGELOG を別々に取り、取れなかった方は今のデータのまま
+      async fetchClaudeNews() {
+        const [notesRes, codeRes] = await Promise.allSettled([
+          fetchText(CLAUDE_NOTES_URL).then(md => parseSections(md, '### ', 3, Infinity)),
+          fetchText(CLAUDE_CODE_URL).then(md => parseSections(md, '## ', 1, 8))
+        ]);
+        const notesOk = notesRes.status === 'fulfilled' && notesRes.value.length > 0;
+        const codeOk = codeRes.status === 'fulfilled' && codeRes.value.length > 0;
+        if (!notesOk) console.warn('Claude Platform リリースノートの取得に失敗しました:', notesRes.reason);
+        if (!codeOk) console.warn('Claude Code CHANGELOG の取得に失敗しました:', codeRes.reason);
+        if (!notesOk && !codeOk) return false;
+
+        const notes = notesOk ? notesRes.value.map(sec => ({
+          title: `${sec.heading}の更新`,
+          author: 'Claude Platform リリースノート',
+          text: sec.items.join('\n')
+        })) : this.claudeNotes;
+        const code = codeOk ? {
+          title: `Claude Code ${codeRes.value[0].heading}`,
+          author: 'Claude Code CHANGELOG',
+          text: codeRes.value[0].items.join('\n')
+        } : this.claudeCode;
+        const untouched = this.isUntouchedSummary('claude-summary');
+        this.applyClaudeData(notes, code);
+        if (untouched) this.loadClaudeSummary();
+        return notesOk && codeOk;
+      }
+
+      applyClaudeData(notes, code) {
+        this.claudeNotes = notes;
+        this.claudeCode = code;
+        const prevValue = this.dom.presetSelect.value;
+        this.dom.optgroupClaude.innerHTML = '';
+        const opts = [['claude-summary', `🤖 Claudeニュースまとめ (${notes.length}本)`]];
+        notes.forEach((art, i) => opts.push([`claude-${i}`, `・${art.title}`]));
+        opts.push(['claude-code', `・${code.title}（英語）`]);
+        for (const [value, label] of opts) {
+          const opt = document.createElement('option');
+          opt.value = value;
+          opt.textContent = label;
+          this.dom.optgroupClaude.appendChild(opt);
+        }
+        if ([...this.dom.presetSelect.options].some(o => o.value === prevValue)) {
+          this.dom.presetSelect.value = prevValue;
+        }
+      }
+
+      loadClaudeSummary() {
+        const combinedText = this.claudeNotes.map(a => `【${a.title}】${a.text}`).join('\n\n');
+        this.loadArticle({
+          title: 'Claudeニュースまとめ',
+          author: 'Claude Platform リリースノート',
+          text: combinedText
+        }, 'claude-summary');
+        this.isSummary = true;
+      }
+
+      applyNewsData(articles) {
         this.newsArticles = articles;
         if (!this.dom.optgroupNews) return;
 
@@ -1116,17 +1280,17 @@
           author: 'NHKニュース',
           text: combinedText
         }, 'news-summary');
-        this.isNewsSummary = true;
+        this.isSummary = true;
       }
 
       loadArticle(art, selectValue = null) {
         this.article = art;
-        this.isNewsSummary = false;
+        this.isSummary = false;
         this.fullText = art.text.trim();
-        // 改行以外の空白（全角を含む）を詰め、全角英数字を半角にする（TODO-003）
+        // 改行以外の空白（全角を含む）を詰める（TODO-003）。英単語の間（日本語・改行・
+        // 行頭行末の隣でない空白）は半角スペース 1 個にする。全角・半角は変えない（TODO-005）
         this.cleanText = this.fullText.replace(/\r\n?|[\u2028\u2029]/g, '\n')
-          .replace(/[^\S\n]/g, '')
-          .replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+          .replace(/[^\S\n]+/g, (sp, i, str) => isWordSide(str[i - 1]) && isWordSide(str[i + sp.length]) ? ' ' : '');
         this.dom.articleTitle.textContent = art.title;
         this.dom.articleAuthor.textContent = `${art.author} （文字数: ${this.cleanText.length}字）`;
         this.dom.charTotalCount.textContent = this.cleanText.length;
@@ -1181,6 +1345,8 @@
         this.dom.textDisplay.innerHTML = '';
         this.charElements = [];
         const fragment = document.createDocumentFragment();
+        let word = null; // 英単語の文字をまとめる span
+        let inLongWord = false;
 
         for (let i = 0; i < this.cleanText.length; i++) {
           const char = this.cleanText[i];
@@ -1195,7 +1361,32 @@
             span.textContent = char;
           }
 
-          fragment.appendChild(span);
+          if (isWordSide(char)) {
+            if (!word && !inLongWord) {
+              // ponytail: 20 字を超える単語は画面の幅に収まらないことがあるので、まとめずに折り返させる
+              let end = i;
+              while (isWordSide(this.cleanText[end])) end++;
+              inLongWord = end - i > 20;
+            }
+            if (inLongWord) {
+              fragment.appendChild(span);
+            } else {
+              if (!word) {
+                word = document.createElement('span');
+                word.className = 'word';
+                fragment.appendChild(word);
+              }
+              word.appendChild(span);
+            }
+          } else if (char === ' ' && word) {
+            // 単語の後ろの空白は単語に付け、行頭に空白が来ないようにする
+            word.appendChild(span);
+            word = null;
+          } else {
+            word = null;
+            inLongWord = false;
+            fragment.appendChild(span);
+          }
           this.charElements.push(span);
         }
 
@@ -1324,12 +1515,12 @@
       }
 
       isCharMatch(a, b) {
+        // 英数字や記号は、形が同じなら全角でも半角でも正解にする（TODO-005）
+        a = toSameShape(a);
+        b = toSameShape(b);
         if (a === b) return true;
-        // Space variations
-        if ((a === ' ' || a === '　') && (b === ' ' || b === '　')) return true;
-        // Quote variations
-        if (("「“\"".includes(a)) && ("「“\"".includes(b))) return true;
-        if (("」”\"".includes(a)) && ("」”\"".includes(b))) return true;
+        if (("「\"".includes(a)) && ("「\"".includes(b))) return true;
+        if (("」\"".includes(a)) && ("」\"".includes(b))) return true;
         return false;
       }
 
