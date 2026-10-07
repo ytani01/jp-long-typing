@@ -19,11 +19,15 @@
 - [ ] 選択欄の先頭（NHK ニュースの上）に「Claude ニュース」として出し、起動時の既定を
       Claude ニュースのまとめにする（NHK まとめから切り替える。起動時の取得後の
       差し替えも Claude ニュースのまとめで行う）
+- [ ] Claude Code の最新版の変更点も取得する。`https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md`
+      の先頭の版（`## 2.1.292` など）の項目を英文のままお手本にし、「Claude ニュース」の
+      optgroup に入れる（CORS を許しているのでプロキシは通さない。失敗時は内蔵のフォールバック）
 - [ ] README.md に書き足す
 
 利用者の依頼（2026-10-07）。Claude 公式で日本語の取得元はこのリリースノートだけで、
-Anthropic のニュース（英語のみ・RSS 無し）と Claude Code の CHANGELOG（英語）は
-入れないと利用者が決めた。リリースノートは CORS を許していないので、公開の CORS
+Anthropic のニュース（英語のみ・RSS 無し）は入れないと利用者が決めた。Claude Code の
+CHANGELOG は日本語版が無い（`code.claude.com/docs/ja/changelog.md` は GitHub へ転送される）が、
+英語のまま入れると後から決めた（2026-10-07）。リリースノートは CORS を許していないので、公開の CORS
 プロキシを経由する（利用者が選んだ）。Markdown のリンク・コード・表記をどこまで
 整えて打ちやすくするかは、着手時に実物を見て決める。
 
