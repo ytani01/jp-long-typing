@@ -543,6 +543,43 @@
       padding: 0.2rem 0.5rem;
     }
 
+    /* 苦手の分析（TODO-021） */
+    .analysis {
+      margin-bottom: 1.25rem;
+      font-size: 0.9rem;
+    }
+
+    .analysis h3 {
+      font-size: 1rem;
+      margin: 0 0 0.5rem;
+    }
+
+    .analysis ul {
+      margin: 0 0 0.75rem;
+      padding-left: 1.25rem;
+    }
+
+    .analysis-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+      gap: 0.75rem 1.5rem;
+    }
+
+    .analysis .history-table th {
+      position: static;
+    }
+
+    .analysis-grid h4 {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin: 0 0 0.3rem;
+    }
+
+    .analysis-grid ol {
+      margin: 0;
+      padding-left: 1.5rem;
+    }
+
     .history-empty {
       color: var(--text-muted);
       text-align: center;
@@ -757,6 +794,7 @@
         <button class="modal-close" id="btn-close-history">&times;</button>
       </div>
       <div class="history-wrap">
+        <section class="analysis" id="history-analysis"></section>
         <table class="history-table">
           <thead>
             <tr>
@@ -960,6 +998,98 @@
       }
     }
 
+    // 苦手の分析（TODO-021）。結果ごとに、字の種類別の字数・時間・誤り、
+    // 誤った字、詰まった語を保存し、新しい 20 回分から集計する
+    const KINDS = ['ひらがな', 'カタカナ', '漢字', '英数字', '記号'];
+
+    function charKind(c) {
+      if (/[\u3041-\u309f]/.test(c)) return 'ひらがな';
+      if (/[\u30a1-\u30fa\u30fc-\u30ff\uff66-\uff9f]/.test(c)) return 'カタカナ';
+      if (/[\u4e00-\u9fff\u3005-\u3007]/.test(c)) return '漢字';
+      if (/[0-9A-Za-z\uff10-\uff19\uff21-\uff3a\uff41-\uff5a]/.test(c)) return '英数字';
+      return '記号';
+    }
+
+    const MISS_TIPS = {
+      'ひらがな': 'ローマ字の綴りや、助詞の「は・へ・を」の打ち分けを見直しましょう。',
+      'カタカナ': '長音（ー）や小さい字（ァ・ッ・ュ）の打ち方を見直しましょう。',
+      '漢字': '確定の前に変換候補を見て、同音の語を取り違えていないか確かめましょう。',
+      '英数字': '英字は IME をオフにして打つと、変換の誤りが減ります。',
+      '記号': '記号は種類（「」と『』など）を見分けます。キーの位置を確かめましょう。'
+    };
+
+    const SLOW_TIPS = {
+      'ひらがな': '文節ごとに区切って確定すると、リズムよく打てます。',
+      'カタカナ': 'カタカナ語は F7 キーで変換すると速くなります。',
+      '漢字': '長い文を一度に変換せず、文節ごとに変換すると、候補を選ぶ時間が減ります。',
+      '英数字': '英字の多い練習文（Claude Code の CHANGELOG の英語版）で練習しましょう。',
+      '記号': '記号の多い文章を貼り付けて練習し、キーの位置を覚えましょう。'
+    };
+
+    const pct = x => `${Math.round(x * 100)}%`;
+    const sec = ms => `${(ms / 1000).toFixed(2)} 秒`;
+    const avg = a => a.reduce((x, y) => x + y, 0) / a.length;
+    const newKind = () => ({ n: 0, ms: 0, miss: 0 });
+    // 1 回に保存する誤った字の数と、詳しい記録を残す回数（履歴の大きさを抑える）
+    const MISS_KEEP = 20;
+    const DETAIL_KEEP = 20;
+
+    function analyzeHistory(history) {
+      const recent = history.filter(r => r.kinds).slice(-20);
+      const kinds = {}, miss = {}, slow = [];
+      for (const r of recent) {
+        for (const [k, v] of Object.entries(r.kinds)) {
+          const t = kinds[k] ??= newKind();
+          t.n += v.n; t.ms += v.ms; t.miss += v.miss;
+        }
+        for (const [c, [n, ctx]] of Object.entries(r.miss || {})) {
+          (miss[c] ??= [0, ctx])[0] += n;
+        }
+        slow.push(...(r.slow || []));
+      }
+      const rows = KINDS.filter(k => kinds[k]).map(k => {
+        const { n, ms, miss: m } = kinds[k];
+        return { kind: k, n, rate: m / (n + m), per: n > 0 ? ms / n : 0, miss: m };
+      });
+      const missTop = Object.entries(miss).sort((a, b) => b[1][0] - a[1][0]).slice(0, 10);
+      // 同じ語は、いちばん遅かった回だけを出す
+      const slowTop = [...new Map(slow.sort((a, b) => a[1] - b[1])).entries()].reverse().slice(0, 5);
+
+      const advice = [];
+      const total = newKind();
+      for (const v of Object.values(kinds)) { total.n += v.n; total.ms += v.ms; total.miss += v.miss; }
+      const rate = total.miss / (total.n + total.miss);
+      const per = total.ms / total.n;
+      const worst = rows.filter(r => r.miss >= 3).sort((a, b) => b.rate - a.rate)[0];
+      if (worst && worst.rate >= rate * 1.5) {
+        advice.push(`${worst.kind}の誤りが多めです（誤り率 ${pct(worst.rate)}、全体は ${pct(rate)}）。${MISS_TIPS[worst.kind]}`);
+      }
+      const slowest = rows.filter(r => r.n >= 20).sort((a, b) => b.per - a.per)[0];
+      if (slowest && slowest.per >= per * 1.5) {
+        advice.push(`${slowest.kind}で手が止まりがちです（1 字あたり ${sec(slowest.per)}、全体は ${sec(per)}）。${SLOW_TIPS[slowest.kind]}`);
+      }
+      if (missTop.length > 0 && missTop[0][1][0] >= 3) {
+        const [c, [n, ctx]] = missTop[0];
+        advice.push(`「${c}」をよく誤ります（${n} 回。例:「${ctx}」）。`);
+      }
+      // CPM と正確率は、分析の記録が無い前の結果も使う。1 字も打たなかった回は外す
+      const typed = history.filter(r => r.chars > 0);
+      const cpms = typed.map(r => r.cpm).filter(Number.isFinite);
+      const a = avg(cpms.slice(-5)), b = avg(cpms.slice(-10, -5));
+      if (cpms.length >= 10 && b > 0) {
+        const d = (a - b) / b;
+        advice.push(`最近 5 回の平均 CPM は ${Math.round(a)} で、その前の 5 回（${Math.round(b)}）` +
+          (Math.abs(d) < 0.03 ? 'とほぼ同じです。' : `から ${pct(Math.abs(d))}${d > 0 ? '上がりました。' : '下がりました。'}`));
+      }
+      const accs = typed.map(r => r.accuracy).filter(Number.isFinite).slice(-5);
+      if (accs.length >= 3) {
+        const a = avg(accs);
+        if (a < 90) advice.push(`最近の正確率は平均 ${Math.round(a)}% です。速さより、確定の前に見直すことを優先しましょう。`);
+        else if (a >= 98) advice.push(`最近の正確率は平均 ${Math.round(a)}% です。正確に打てているので、少し速さを意識してみましょう。`);
+      }
+      return { count: recent.length, rows, missTop, slowTop, advice };
+    }
+
     // 行の頭に置かない文字（TODO-015）
     const NO_LINE_START = new Set('、。，．・：；？！）］｝」』】〕〉》〙〗〛｠〟’”｡｣､…‥々ゝゞヽヾ),.!?:;]}');
 
@@ -1127,6 +1257,7 @@
           historyModal: document.getElementById('history-modal'),
           historyBody: document.getElementById('history-body'),
           historyEmpty: document.getElementById('history-empty'),
+          historyAnalysis: document.getElementById('history-analysis'),
           btnCloseHistory: document.getElementById('btn-close-history')
         };
 
@@ -1419,6 +1550,8 @@
         this.totalKeystrokes = 0;
         this.correctChars = 0;
         this.isFinished = false;
+        this.lastMatchAt = null;
+        this.stats = { kinds: {}, miss: {}, chunks: [] };
 
         this.dom.typingInput.value = '';
         this.dom.typingInput.classList.remove('error');
@@ -1605,6 +1738,9 @@
         if (matchedCount > 0) {
           this.currentIndex += matchedCount;
           this.correctChars += matchedCount;
+          const now = Date.now();
+          this.recordChunk(this.cleanText.slice(this.currentIndex - matchedCount, this.currentIndex), now - (this.lastMatchAt || this.startTime));
+          this.lastMatchAt = now;
           this.sound.playConfirm();
 
           // Clear the matched part from input
@@ -1622,6 +1758,7 @@
 
         if (hasMismatch) {
           this.mistakesCount++;
+          this.recordMiss();
           this.sound.playError();
           this.dom.typingInput.classList.add('error');
           setTimeout(() => {
@@ -1630,6 +1767,27 @@
           this.updateTimerAndStats();
         }
         this.markMiss(hasMismatch);
+      }
+
+      // 確定した字を、かかった時間を字数で割って字の種類ごとに足す（TODO-021）
+      recordChunk(chunk, ms) {
+        chunk = chunk.replace(/\n/g, '');
+        if (!chunk) return;
+        const per = ms / chunk.length;
+        for (const c of chunk) {
+          const k = this.stats.kinds[charKind(c)] ??= newKind();
+          k.n++;
+          k.ms += per;
+        }
+        this.stats.chunks.push([chunk, per]);
+      }
+
+      // 誤りは、お手本の今の字に数える。例として前後 3 字を残す
+      recordMiss() {
+        const i = this.currentIndex;
+        const c = this.cleanText[i];
+        (this.stats.kinds[charKind(c)] ??= newKind()).miss++;
+        (this.stats.miss[c] ??= [0, this.cleanText.slice(Math.max(0, i - 3), i + 4).replace(/\n/g, ' ')])[0]++;
       }
 
       // 入力欄に誤りが残っているあいだ、お手本の今の文字に印を付ける
@@ -1756,8 +1914,11 @@
           date: Date.now(),
           title: this.article.title,
           timeLimit: this.timeLimit,
-          rank, time: timeStr, cpm, chars: this.correctChars, accuracy
+          rank, time: timeStr, cpm, chars: this.correctChars, accuracy,
+          ...this.statsForHistory()
         });
+        // 分析は新しい回だけを見るので、それより前の回からは詳しい記録を落とす
+        history.slice(0, -DETAIL_KEEP).forEach(r => { delete r.kinds; delete r.miss; delete r.slow; });
         saveHistory(history);
 
         // 練習中に開いた履歴は閉じ、結果を前に出す（TODO-018）
@@ -1802,6 +1963,21 @@
         this.loadArticle(customArticle, 'custom-text');
       }
 
+      // 詰まった語は、1 字あたりの時間がこの回の平均の 2 倍を超えた確定のうち、遅い 3 つ。
+      // 1 字だけの確定は外す（IME をオフにした英字は 1 字ずつ確定するので、語にならない）
+      statsForHistory() {
+        const { kinds, miss, chunks } = this.stats;
+        const v = Object.values(kinds);
+        const mean = v.reduce((t, k) => t + k.ms, 0) / v.reduce((t, k) => t + k.n, 0);
+        const slow = chunks.filter(([c, per]) => c.length >= 2 && per > mean * 2)
+          .sort((a, b) => b[1] - a[1]).slice(0, 3)
+          .map(([c, per]) => [c.slice(0, 20), Math.round(per)]);
+        const k = {};
+        for (const [kind, v] of Object.entries(kinds)) k[kind] = { n: v.n, ms: Math.round(v.ms), miss: v.miss };
+        const topMiss = Object.fromEntries(Object.entries(miss).sort((a, b) => b[1][0] - a[1][0]).slice(0, MISS_KEEP));
+        return { kinds: k, miss: topMiss, slow };
+      }
+
       closeResultModal() {
         this.dom.resultModal.classList.remove('active');
       }
@@ -1816,8 +1992,61 @@
         this.dom.typingInput.focus({ preventScroll: true });
       }
 
+      renderAnalysis(history) {
+        const box = this.dom.historyAnalysis;
+        box.replaceChildren();
+        if (history.length === 0) return;
+        const el = (tag, text) => {
+          const e = document.createElement(tag);
+          if (text !== undefined) e.textContent = text;
+          return e;
+        };
+        const a = analyzeHistory(history);
+        box.append(el('h3', a.count > 0 ? `苦手の分析（新しい ${a.count} 回分）` : '苦手の分析'));
+        const advice = a.count > 0 ? a.advice : ['苦手な字や語は、これからの練習の結果から分析します。', ...a.advice];
+        if (advice.length === 0) advice.push('目立った苦手はありません。この調子で続けましょう。');
+        const ul = el('ul');
+        advice.forEach(t => ul.append(el('li', t)));
+        box.append(ul);
+        if (a.count === 0) return;
+
+        const grid = el('div');
+        grid.className = 'analysis-grid';
+        const table = el('table');
+        table.className = 'history-table';
+        const head = el('tr');
+        ['字の種類', '字数', '誤り率', '1 字あたり'].forEach(t => head.append(el('th', t)));
+        table.append(head);
+        for (const r of a.rows) {
+          const tr = el('tr');
+          [r.kind, r.n, pct(r.rate), sec(r.per)].forEach(t => tr.append(el('td', t)));
+          table.append(tr);
+        }
+        const list = (title, items) => {
+          const d = el('div');
+          d.append(el('h4', title));
+          if (items.length === 0) {
+            d.append(el('p', 'なし'));
+          } else {
+            const ol = el('ol');
+            items.forEach(t => ol.append(el('li', t)));
+            d.append(ol);
+          }
+          return d;
+        };
+        const kindsBox = el('div');
+        kindsBox.append(el('h4', '字の種類ごと'), table);
+        grid.append(
+          kindsBox,
+          list('よく誤る字', a.missTop.map(([c, [n, ctx]]) => `「${c}」${n} 回（${ctx}）`)),
+          list('詰まった語', a.slowTop.map(([t, per]) => `${t}（1 字 ${sec(per)}）`))
+        );
+        box.append(grid);
+      }
+
       renderHistory() {
         const history = loadHistory();
+        this.renderAnalysis(history);
         const body = this.dom.historyBody;
         body.replaceChildren();
         this.dom.historyEmpty.hidden = history.length > 0;
