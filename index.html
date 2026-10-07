@@ -497,6 +497,58 @@
       color: var(--success-color);
     }
 
+    /* 履歴（TODO-018） */
+    .modal-card.history-card {
+      max-width: 860px;
+    }
+
+    .history-wrap {
+      max-height: 60vh;
+      overflow: auto;
+    }
+
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    .history-table th,
+    .history-table td {
+      padding: 0.45rem 0.6rem;
+      border-bottom: 1px solid var(--panel-border);
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .history-table th {
+      position: sticky;
+      top: 0;
+      background-color: #1e2433;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    [data-theme="light"] .history-table th {
+      background-color: #ffffff;
+    }
+
+    .history-table .history-title {
+      text-align: left;
+      white-space: normal;
+      min-width: 10rem;
+    }
+
+    .history-table .history-delete {
+      padding: 0.2rem 0.5rem;
+    }
+
+    .history-empty {
+      color: var(--text-muted);
+      text-align: center;
+      padding: 1.5rem 0;
+    }
+
     .modal-actions {
       display: flex;
       justify-content: flex-end;
@@ -552,6 +604,8 @@
         <option value="180">3分</option>
         <option value="300">5分</option>
       </select>
+
+      <button id="btn-history" class="btn-outline" title="これまでの結果を見る"></button>
 
       <button id="btn-sound" class="btn-outline" title="サウンド切替"></button>
 
@@ -696,6 +750,35 @@
       <div class="modal-actions">
         <button class="btn-outline" id="btn-result-next">次の文章</button>
         <button id="btn-result-retry" style="background-color: var(--accent-color); color: #fff;">もう一度練習する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- History Modal（TODO-018） -->
+  <div class="modal-overlay" id="history-modal">
+    <div class="modal-card history-card">
+      <div class="modal-header">
+        <h2>履歴</h2>
+        <button class="modal-close" id="btn-close-history">&times;</button>
+      </div>
+      <div class="history-wrap">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>日時</th>
+              <th class="history-title">文章</th>
+              <th>制限時間</th>
+              <th>ランク</th>
+              <th>所要時間</th>
+              <th>CPM</th>
+              <th>文字数</th>
+              <th>正確率</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="history-body"></tbody>
+        </table>
+        <p class="history-empty" id="history-empty">まだ結果がありません。</p>
       </div>
     </div>
   </div>
@@ -845,6 +928,7 @@
       reset: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
       soundOn: '<path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/>',
       soundOff: '<path d="M11 5 6 9H3v6h3l5 4z"/><path d="m16 9 6 6M22 9l-6 6"/>',
+      history: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
       moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
       sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'
     };
@@ -852,6 +936,27 @@
     function setButton(btn, icon, label = '') {
       btn.innerHTML = `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[icon]}</svg>`;
       if (label) btn.append(label);
+    }
+
+    // 結果の履歴（TODO-018）。件数の上限は設けない。
+    // localStorage が使えない環境（プライベートモードなど）では保存しない
+    const HISTORY_KEY = 'jp-long-typing-history';
+
+    function loadHistory() {
+      try {
+        const h = JSON.parse(localStorage.getItem(HISTORY_KEY));
+        return Array.isArray(h) ? h.filter(r => r && typeof r === 'object') : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveHistory(history) {
+      try {
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+      } catch {
+        // 保存できなくても練習は続けられる
+      }
     }
 
     // 行の頭に置かない文字（TODO-015）
@@ -1016,7 +1121,12 @@
           resAccuracy: document.getElementById('res-accuracy'),
           btnResultNext: document.getElementById('btn-result-next'),
           btnResultRetry: document.getElementById('btn-result-retry'),
-          btnCloseResult: document.getElementById('btn-close-result')
+          btnCloseResult: document.getElementById('btn-close-result'),
+          btnHistory: document.getElementById('btn-history'),
+          historyModal: document.getElementById('history-modal'),
+          historyBody: document.getElementById('history-body'),
+          historyEmpty: document.getElementById('history-empty'),
+          btnCloseHistory: document.getElementById('btn-close-history')
         };
 
         // 既定の制限時間は選択欄の selected で決める
@@ -1024,6 +1134,7 @@
         this.bindEvents();
         setButton(this.dom.btnFetchNews, 'news', 'ニュース更新');
         setButton(this.dom.btnRestart, 'reset', 'リセット');
+        setButton(this.dom.btnHistory, 'history', '履歴');
         setButton(this.dom.btnSound, 'soundOn', '効果音: ON');
         setButton(this.dom.btnTheme, 'moon');
         // 内蔵のデータで始め、裏で最新を取得する
@@ -1128,6 +1239,10 @@
           this.currentArticleIndex = nextIdx;
           this.loadArticle(PRESETS[nextIdx]);
         });
+
+        // History modal events（TODO-018）
+        this.dom.btnHistory.addEventListener('click', () => this.openHistoryModal());
+        this.dom.btnCloseHistory.addEventListener('click', () => this.closeHistoryModal());
 
         // Focus input on load
         window.addEventListener('load', () => {
@@ -1593,6 +1708,8 @@
       }
 
       finish(isTimeUp = false) {
+        // 時間切れの直後に最後の文字が確定すると 2 回呼ばれる。結果は 1 回だけ出す（TODO-018）
+        if (this.isFinished) return;
         this.isFinished = true;
         this.markMiss(false);
         if (this.timerInterval) {
@@ -1640,6 +1757,17 @@
         this.dom.resChars.textContent = `${this.correctChars} 字`;
         this.dom.resAccuracy.textContent = `${accuracy}%`;
 
+        const history = loadHistory();
+        history.push({
+          date: Date.now(),
+          title: this.article.title,
+          timeLimit: this.timeLimit,
+          rank, time: timeStr, cpm, chars: this.correctChars, accuracy
+        });
+        saveHistory(history);
+
+        // 練習中に開いた履歴は閉じ、結果を前に出す（TODO-018）
+        this.dom.historyModal.classList.remove('active');
         this.dom.resultModal.classList.add('active');
       }
 
@@ -1682,6 +1810,55 @@
 
       closeResultModal() {
         this.dom.resultModal.classList.remove('active');
+      }
+
+      openHistoryModal() {
+        this.renderHistory();
+        this.dom.historyModal.classList.add('active');
+      }
+
+      closeHistoryModal() {
+        this.dom.historyModal.classList.remove('active');
+        this.dom.typingInput.focus({ preventScroll: true });
+      }
+
+      renderHistory() {
+        const history = loadHistory();
+        const body = this.dom.historyBody;
+        body.replaceChildren();
+        this.dom.historyEmpty.hidden = history.length > 0;
+        // 新しい順に出す。削除は保存した並びの添字で行う
+        for (let i = history.length - 1; i >= 0; i--) {
+          const r = history[i];
+          const tr = document.createElement('tr');
+          const limit = r.timeLimit > 0
+            ? (r.timeLimit < 60 ? `${r.timeLimit}秒` : `${r.timeLimit / 60}分`)
+            : '無制限';
+          const cells = [
+            new Date(r.date).toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }),
+            r.title, limit, r.rank, r.time, r.cpm, `${r.chars} 字`, `${r.accuracy}%`
+          ];
+          cells.forEach((v, j) => {
+            const td = document.createElement('td');
+            td.textContent = v;
+            if (j === 1) td.className = 'history-title';
+            tr.append(td);
+          });
+          const td = document.createElement('td');
+          const btn = document.createElement('button');
+          btn.className = 'btn-outline history-delete';
+          btn.title = 'この結果を削除';
+          btn.textContent = '削除';
+          btn.addEventListener('click', () => {
+            const h = loadHistory();
+            h.splice(i, 1);
+            saveHistory(h);
+            this.renderHistory();
+          });
+          td.append(btn);
+          tr.append(td);
+          body.append(tr);
+        }
       }
     }
 
