@@ -11,6 +11,8 @@
   動くようにする
 - Claude Platform リリースノートはブラウザで取得しない。`update-release-notes`
   skill で訳して `CLAUDE_NOTES` に埋め込む（TODO-017）
+- Claude Code の CHANGELOG の日本語版も同じ skill で訳して `CLAUDE_CODE_JA` に
+  埋め込む。英語版はこれまでどおりブラウザで取得する（TODO-020）
 
 ## 確認の手順
 

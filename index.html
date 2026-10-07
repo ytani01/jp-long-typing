@@ -786,7 +786,7 @@
       {
         title: "日本語長文タイピングの特徴",
         author: "日本語長文タイピング",
-        text: `日本語長文タイピングは、ブラウザで開くだけで使える日本語の長文タイピング練習アプリです。外部ライブラリもビルドも要らず、HTML ファイル 1 つで動きます。\n入力、変換、確定をくり返して長文を打ち進めます。文節や句読点ごとに確定してかまいません。英数字や記号は、形が同じなら全角でも半角でも正解になります。\n練習文は、Claude のニュース、NHK ニュース、青空文庫の名作から選べます。Claude のニュースは Claude Platform のリリースノートと Claude Code の CHANGELOG です。リリースノートは日本語に訳して内蔵しています。CHANGELOG と NHK ニュースは起動時と「ニュース更新」で最新のものを取得し、取得できないときは内蔵のデータを使います。好きな文章を貼り付けて練習することもできます。\n制限時間は 30 秒、1 分、3 分、5 分、無制限から選べます。経過時間、CPM、進捗率、正確率、ミス打鍵数をリアルタイムで表示し、終わると成績を SS、S、A、B、C のランクで評価します。\nダークモードとライトモードを切り替えられ、打鍵音や確定音は Web Audio API で鳴らします。`
+        text: `日本語長文タイピングは、ブラウザで開くだけで使える日本語の長文タイピング練習アプリです。外部ライブラリもビルドも要らず、HTML ファイル 1 つで動きます。\n入力、変換、確定をくり返して長文を打ち進めます。文節や句読点ごとに確定してかまいません。英数字や記号は、形が同じなら全角でも半角でも正解になります。\n練習文は、Claude のニュース、NHK ニュース、青空文庫の名作から選べます。Claude のニュースは Claude Platform のリリースノートと Claude Code の CHANGELOG です。リリースノートと、CHANGELOG の最新 3 版は日本語に訳して内蔵しています。CHANGELOG の英語版と NHK ニュースは起動時と「ニュース更新」で最新のものを取得し、取得できないときは内蔵のデータを使います。好きな文章を貼り付けて練習することもできます。\n制限時間は 30 秒、1 分、3 分、5 分、無制限から選べます。経過時間、CPM、進捗率、正確率、ミス打鍵数をリアルタイムで表示し、終わると成績を SS、S、A、B、C のランクで評価します。\nダークモードとライトモードを切り替えられ、打鍵音や確定音は Web Audio API で鳴らします。`
       },
       {
         title: "走れメロス",
@@ -830,7 +830,8 @@
        CLAUDE NEWS (TODO-005)
        リリースノートは CORS を許していないので、ブラウザでは取得せず
        update-release-notes skill で訳して埋め込む（TODO-017）。
-       Claude Code の CHANGELOG は英語のみで、CORS を許している
+       Claude Code の CHANGELOG は英語のみで、CORS を許している。英語版は取得し、
+       日本語版は同じ skill で訳して埋め込む（TODO-020）
        ======================================================== */
     const CLAUDE_CODE_URL = 'https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md';
 
@@ -850,6 +851,25 @@
         "title": "2026年10月6日の更新",
         "author": "Claude Platform リリースノート",
         "text": "Models APIにcapabilities.server_toolsを追加しました。GET /v1/modelsとGET /v1/models/{model_id}が、各モデルがweb searchツールとcode executionツールを受け付けるかを返すようになりました。モデルがcode executionツールを受け付けるかは、capabilities.server_tools.code_executionで確かめてください。最上位のcapabilities.code_executionは、コードからリクエストのほかのツールを呼べるかを表します。Models APIの使い方を参照してください。"
+      }
+    ];
+
+    // update-release-notes skill が書き換える（2026-10-08 時点の内容。最新 3 版の先頭 8 項目の訳。TODO-020）
+    const CLAUDE_CODE_JA = [
+      {
+        "title": "Claude Code 2.1.293（日本語）",
+        "author": "Claude Code CHANGELOG",
+        "text": "Claude Haiku 5.5（claude-haiku-5-5）を追加しました。Anthropic APIの既定のHaikuモデルになりました。コンテキストは100万トークンで、料金は100万トークンあたり$0.10/$0.50（100Kトークンを超えるプロンプトは$0.50/$2.50）です。\nsubagentStatusLineのペイロードにagentTypeを追加しました。スクリプトでカスタムのサブエージェントの種類を見分けられます。\nmod向けに、$.tool.registerにisDeferredを追加しました。falseにすると、ツールのスキーマをtool searchで探されるまで隠さず、最初からプロンプトに載せます。\nClaudeが、コンテキストの圧縮の直前に自分が行った操作を、圧縮の後に行ったものとして扱い、終えた作業を取り消したりやり直したりすることがある問題を直しました。\nHTTPのMCP接続が、閉じるまで送ったリクエストをすべて保持し続けるメモリーリークを直しました。\nClaudeの作業中に送ったメッセージが、←でセッションをバックグラウンドに移したときに失われる問題を直しました。キューにあるメッセージを移せないときは、←を押しても移さずに、その旨を表示します。\n/modelのeffortを←/→で変えるとき、最も高いレベルや低いレベルを越えて反対側に回り込み、誤ってLowをモデルの既定のeffortとして保存することがある問題を直しました。\n--chromeで始めたセッションで、/tuiがClaude in Chromeとの接続を切り、--no-chromeを無視する問題を直しました。"
+      },
+      {
+        "title": "Claude Code 2.1.292（日本語）",
+        "author": "Claude Code CHANGELOG",
+        "text": "claude plugin installに--marketplace <source>を追加しました。必要なら、claude plugin marketplace addと同じポリシーの確認を経てマーケットプレイスを追加し、そこからプラグインをインストールします。\nAgentツールにeffortパラメーターを追加しました。指定したeffortのレベルで、Claudeがサブエージェントを動かします。\n過負荷（529）のリクエストを再試行するときのバックオフの基本の待ち時間を長くする、環境変数CLAUDE_CODE_OVERLOADED_RETRY_BASE_DELAY_MSを追加しました。\nprompt.autocompleteを追加しました。modがこのイベントにフックして、プロンプト欄の補完の一覧に独自の行を足せます。\nmod向けに、$.model.completeにプロンプトキャッシュを追加しました。promptとsystemにテキストのブロックを渡せるようになり、ブロックにcache: trueを付けると、そこまでのリクエストをキャッシュします。\nagent.spawnのmodフックに、ワークフローのエージェントも、その実行と番号を添えて渡すようにしました。modがそれを拒否できます。\npermissionMode: autoのサブエージェント定義が、auto modeを使えないとき（設定で無効にされている、circuit breakerが働いた、モデルが対応していない）にもauto modeに入る問題を直しました。\nサンドボックスで動くコマンドが、~/.claude/seed-admin以下にある/ultrareviewのアップロード用のファイルのコピーを読めてしまう問題を直しました。"
+      },
+      {
+        "title": "Claude Code 2.1.291（日本語）",
+        "author": "Claude Code CHANGELOG",
+        "text": "2.1.290で入った、クラウドセッションで許可の確認への回答が失われることがある不具合を直しました。\n2.1.288で入った、終了するときにセッションの最後のメッセージが失われることがある不具合を直しました。"
       }
     ];
 
@@ -1138,6 +1158,8 @@
             this.loadClaudeSummary();
           } else if (val === 'claude-code') {
             this.loadArticle(this.claudeCode);
+          } else if (val.startsWith('code-ja-')) {
+            this.loadArticle(CLAUDE_CODE_JA[parseInt(val.replace('code-ja-', ''), 10)]);
           } else if (val.startsWith('claude-')) {
             const idx = parseInt(val.replace('claude-', ''), 10);
             if (this.claudeNotes[idx]) {
@@ -1329,6 +1351,7 @@
         const opts = [['claude-summary', `🤖 Claudeニュースまとめ (${notes.length}本)`]];
         notes.forEach((art, i) => opts.push([`claude-${i}`, `・${art.title}`]));
         opts.push(['claude-code', `・${code.title}（英語）`]);
+        CLAUDE_CODE_JA.forEach((art, i) => opts.push([`code-ja-${i}`, `・${art.title}`]));
         for (const [value, label] of opts) {
           const opt = document.createElement('option');
           opt.value = value;
