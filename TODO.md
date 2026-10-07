@@ -6,14 +6,14 @@
 
 ---
 
-## TODO-009. 入力を始めると計測が始まることと、お手本の選択欄の項目名を書く
+## TODO-009. 入力を始めると計測が始まることと、選択欄の項目名「練習文」を書く
 
 |      | main | 担当 |
 |------|------|------|
 | 見込み | Opus 5.5 / effort medium | main（実装）+ verifier（Sonnet 5.5 / medium） |
 
 - [ ] `.article-info` の上に「入力を始めると計測が始まります」を小さい灰色の文字で常に表示する
-- [ ] `#preset-select` の左に `<label for="preset-select">お手本</label>` を置く
+- [ ] `#preset-select` の左に `<label for="preset-select">練習文</label>` を置く
 
 （背景）いつ計測が始まるかが画面に書かれていない。表示は常に出す形に決めた
 （打ち始めたら隠す案は JS の分岐が増えるので採らない）。
