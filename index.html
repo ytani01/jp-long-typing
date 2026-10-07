@@ -210,15 +210,33 @@
     .article-info {
       display: flex;
       justify-content: space-between;
-      align-items: baseline;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.4rem 0.75rem;
       border-bottom: 1px solid var(--panel-border);
       padding-bottom: 0.4rem;
       flex-shrink: 0;
     }
 
-    .article-title {
-      font-size: 1.15rem;
-      font-weight: 600;
+    .preset-group {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    /* 長い題名や狭い画面では、選択欄を本文の幅に収める */
+    #preset-select {
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    .preset-label {
+      flex-shrink: 0;
+      white-space: nowrap;
+      font-size: 0.85rem;
+      color: var(--text-muted);
     }
 
     .article-author {
@@ -301,15 +319,6 @@
       align-items: center;
       font-size: 0.85rem;
       color: var(--text-muted);
-    }
-
-    .input-instruction span.kbd {
-      background: var(--bg-tertiary);
-      border: 1px solid var(--panel-border);
-      border-radius: 4px;
-      padding: 2px 6px;
-      font-family: monospace;
-      color: var(--text-main);
     }
 
     .input-field-wrapper {
@@ -483,16 +492,6 @@
       gap: 0.75rem;
     }
 
-    footer {
-      text-align: center;
-      padding: 0.5rem 1.5rem;
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      border-top: 1px solid var(--panel-border);
-      background-color: var(--bg-secondary);
-      flex-shrink: 0;
-    }
-
     @media (max-width: 640px) {
       .text-display-card {
         font-size: 1.05rem;
@@ -502,6 +501,10 @@
       #typing-input {
         font-size: 1.15rem;
         padding: 0.65rem 0.85rem;
+      }
+      /* 案内文が狭い入力欄でも欠けないようにする */
+      #typing-input::placeholder {
+        font-size: 0.85rem;
       }
       .stats-panel {
         grid-template-columns: repeat(3, 1fr);
@@ -519,31 +522,6 @@
     </div>
 
     <div class="controls-bar">
-      <select id="preset-select" title="文章を選択">
-        <optgroup label="このアプリ">
-          <option value="0">日本語長文タイピングの特徴</option>
-        </optgroup>
-        <optgroup id="optgroup-claude" label="🤖 Claudeニュース">
-          <option value="claude-summary">🤖 Claudeニュースまとめ</option>
-        </optgroup>
-        <optgroup id="optgroup-news" label="📰 NHKニュース">
-          <option value="news-summary">📰 NHK主要ニュースまとめ</option>
-        </optgroup>
-        <optgroup label="Claude Code ドキュメント">
-          <option value="1">概要</option>
-          <option value="2">クイックスタート</option>
-          <option value="3">一般的なワークフロー</option>
-        </optgroup>
-        <optgroup label="文学名作">
-          <option value="4">太宰治『走れメロス』</option>
-          <option value="5">夏目漱石『吾輩は猫である』</option>
-          <option value="6">芥川龍之介『羅生門』</option>
-        </optgroup>
-        <optgroup label="カスタム">
-          <option value="custom">✏️ 自分で文章を貼り付ける...</option>
-        </optgroup>
-      </select>
-
       <button id="btn-fetch-news" class="btn-outline" title="Claude・NHKの最新ニュースを取得・更新">
         📰 ニュース更新
       </button>
@@ -601,7 +579,34 @@
   <!-- Main Typing Area -->
   <main>
     <div class="article-info">
-      <div class="article-title" id="article-title">走れメロス</div>
+      <span class="preset-group">
+        <label for="preset-select" class="preset-label">練習文</label>
+        <select id="preset-select" title="文章を選択">
+          <optgroup label="このアプリ">
+            <option value="0">日本語長文タイピングの特徴</option>
+          </optgroup>
+          <optgroup id="optgroup-claude" label="🤖 Claudeニュース">
+            <option value="claude-summary">🤖 Claudeニュースまとめ</option>
+          </optgroup>
+          <optgroup id="optgroup-news" label="📰 NHKニュース">
+            <option value="news-summary">📰 NHK主要ニュースまとめ</option>
+          </optgroup>
+          <optgroup label="Claude Code ドキュメント">
+            <option value="1">概要</option>
+            <option value="2">クイックスタート</option>
+            <option value="3">一般的なワークフロー</option>
+          </optgroup>
+          <optgroup label="文学名作">
+            <option value="4">太宰治『走れメロス』</option>
+            <option value="5">夏目漱石『吾輩は猫である』</option>
+            <option value="6">芥川龍之介『羅生門』</option>
+          </optgroup>
+          <optgroup label="カスタム">
+            <option value="custom-text" id="opt-custom-text" hidden></option>
+            <option value="custom">✏️ 自分で文章を貼り付ける...</option>
+          </optgroup>
+        </select>
+      </span>
       <div class="article-author" id="article-author">太宰治 （文字数: <span id="char-total-count">0</span>字）</div>
     </div>
 
@@ -620,13 +625,12 @@
     <div class="typing-input-card">
       <div class="input-instruction">
         <span>💡 日本語IMEをONにして入力し、確定（Enter）してください。句読点や英数字もそのまま入力できます。</span>
-        <span>フォーカス維持: <span class="kbd">常に有効</span></span>
       </div>
       <div class="input-field-wrapper">
         <input 
           type="text" 
           id="typing-input" 
-          placeholder="ここをクリックして日本語を入力..." 
+          placeholder="ここに入力を始めると計測が始まります" 
           autocomplete="off" 
           autocorrect="off" 
           autocapitalize="off" 
@@ -635,11 +639,6 @@
       </div>
     </div>
   </main>
-
-  <!-- Footer -->
-  <footer>
-    日本語長文タイピング &bull; ブラウザ単一HTML完結 &bull; 青空文庫パブリックドメインテキストと Claude Code 日本語ドキュメントの抜粋を使用
-  </footer>
 
   <!-- Custom Text Modal -->
   <div class="modal-overlay" id="custom-modal">
@@ -706,7 +705,7 @@
       {
         title: "日本語長文タイピングの特徴",
         author: "日本語長文タイピング",
-        text: `日本語長文タイピングは、ブラウザで開くだけで使える日本語の長文タイピング練習アプリです。外部ライブラリもビルドも要らず、HTML ファイル 1 つで動きます。\nIME をオンにしたまま、入力、変換、確定をくり返して長文を打ち進めます。文節や句読点ごとに確定してかまいません。英数字や記号は、形が同じなら全角でも半角でも正解になります。\nお手本は、Claude のニュース、NHK ニュース、Claude Code の日本語ドキュメントの抜粋、青空文庫の名作から選べます。Claude のニュースは Claude Platform のリリースノートと Claude Code の CHANGELOG です。ニュースは起動時と「ニュース更新」で最新のものを取得し、取得できないときは内蔵のデータを使います。好きな文章を貼り付けて練習することもできます。\n制限時間は 30 秒、1 分、3 分、5 分、無制限から選べます。経過時間、CPM、進捗率、正確率、ミス打鍵数をリアルタイムで表示し、終わると成績を SS、S、A、B、C のランクで評価します。\nダークモードとライトモードを切り替えられ、打鍵音や確定音は Web Audio API で鳴らします。`
+        text: `日本語長文タイピングは、ブラウザで開くだけで使える日本語の長文タイピング練習アプリです。外部ライブラリもビルドも要らず、HTML ファイル 1 つで動きます。\nIME をオンにしたまま、入力、変換、確定をくり返して長文を打ち進めます。文節や句読点ごとに確定してかまいません。英数字や記号は、形が同じなら全角でも半角でも正解になります。\n練習文は、Claude のニュース、NHK ニュース、Claude Code の日本語ドキュメントの抜粋、青空文庫の名作から選べます。Claude のニュースは Claude Platform のリリースノートと Claude Code の CHANGELOG です。ニュースは起動時と「ニュース更新」で最新のものを取得し、取得できないときは内蔵のデータを使います。好きな文章を貼り付けて練習することもできます。\n制限時間は 30 秒、1 分、3 分、5 分、無制限から選べます。経過時間、CPM、進捗率、正確率、ミス打鍵数をリアルタイムで表示し、終わると成績を SS、S、A、B、C のランクで評価します。\nダークモードとライトモードを切り替えられ、打鍵音や確定音は Web Audio API で鳴らします。`
       },
       {
         title: "Claude Code 概要",
@@ -821,7 +820,7 @@
     }
 
     // 照合用に、形が同じ字を 1 つにそろえる（全角の英数字・記号は半角に、
-    // “”‘’、ハイフン類と長音、波ダッシュ、全角の空白）。お手本は変えない（TODO-005）
+    // “”‘’、ハイフン類と長音、波ダッシュ、全角の空白）。練習文は変えない（TODO-005）
     function toSameShape(c) {
       if (c === '“' || c === '”') return '"';
       if (c === '‘' || c === '’') return "'";
@@ -971,7 +970,6 @@
           labelTime: document.getElementById('label-time'),
           optgroupNews: document.getElementById('optgroup-news'),
           optgroupClaude: document.getElementById('optgroup-claude'),
-          articleTitle: document.getElementById('article-title'),
           articleAuthor: document.getElementById('article-author'),
           charTotalCount: document.getElementById('char-total-count'),
           textDisplay: document.getElementById('text-display'),
@@ -1018,6 +1016,8 @@
           const val = e.target.value;
           if (val === 'custom') {
             this.openCustomModal();
+          } else if (val === 'custom-text') {
+            this.loadArticle(this.customArticle);
           } else if (val === 'claude-summary') {
             this.loadClaudeSummary();
           } else if (val === 'claude-code') {
@@ -1294,7 +1294,6 @@
         // 行頭行末の隣でない空白）は半角スペース 1 個にする。全角・半角は変えない（TODO-005）
         this.cleanText = this.fullText.replace(/\r\n?|[\u2028\u2029]/g, '\n')
           .replace(/[^\S\n]+/g, (sp, i, str) => isWordSide(str[i - 1]) && isWordSide(str[i + sp.length]) ? ' ' : '');
-        this.dom.articleTitle.textContent = art.title;
         this.dom.articleAuthor.textContent = `${art.author} （文字数: ${this.cleanText.length}字）`;
         this.dom.charTotalCount.textContent = this.cleanText.length;
         if (selectValue !== null) {
@@ -1657,8 +1656,13 @@
           text: text
         };
 
+        // 選択欄に題名を出し、あとで選び直せるようにする
+        this.customArticle = customArticle;
+        const opt = document.getElementById('opt-custom-text');
+        opt.textContent = `✏️ ${title}`;
+        opt.hidden = false;
         this.closeCustomModal();
-        this.loadArticle(customArticle);
+        this.loadArticle(customArticle, 'custom-text');
       }
 
       closeResultModal() {
