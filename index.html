@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>日本語長文タイピング練習 - 速打 (Hayauchi)</title>
+  <style>
+    :root {
+      --bg-primary: #12151c;
+      --bg-secondary: #1b202c;
+      --bg-tertiary: #252c3d;
+      --text-main: #e2e8f0;
+      --text-muted: #7987a1;
+      --accent-color: #38bdf8;
+      --accent-hover: #0ea5e9;
+      --success-color: #34d399;
+      --error-color: #f87171;
+      --current-char-bg: rgba(56, 189, 248, 0.25);
+      --current-char-border: #38bdf8;
+      --panel-border: #2d3748;
+      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+      --font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "BIZ UDPGothic", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+    }
+
+    [data-theme="light"] {
+      --bg-primary: #f8fafc;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f1f5f9;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --accent-color: #0284c7;
+      --accent-hover: #0369a1;
+      --success-color: #059669;
+      --error-color: #dc2626;
+      --current-char-bg: rgba(2, 132, 199, 0.2);
+      --current-char-border: #0284c7;
+      --panel-border: #e2e8f0;
+      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      font-family: var(--font-family);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.6;
+      transition: background-color 0.25s, color 0.25s;
+    }
+
+    header {
+      background-color: var(--bg-secondary);
+      border-bottom: 1px solid var(--panel-border);
+      padding: 0.65rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      flex-shrink: 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .brand-icon {
+      font-size: 1.5rem;
+      color: var(--accent-color);
+    }
+
+    .brand h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .controls-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    select, button, input[type="text"], textarea {
+      font-family: inherit;
+      font-size: 0.9rem;
+      border-radius: 6px;
+      border: 1px solid var(--panel-border);
+      background-color: var(--bg-tertiary);
+      color: var(--text-main);
+      padding: 0.45rem 0.8rem;
+      outline: none;
+      transition: border-color 0.2s, background-color 0.2s;
+    }
+
+    select:focus, button:focus, input:focus, textarea:focus {
+      border-color: var(--accent-color);
+    }
+
+    button {
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-weight: 500;
+    }
+
+    button:hover {
+      background-color: var(--accent-hover);
+      color: #ffffff;
+      border-color: var(--accent-hover);
+    }
+
+    button.btn-outline {
+      background-color: transparent;
+    }
+
+    button.btn-outline:hover {
+      background-color: var(--bg-tertiary);
+      color: var(--accent-color);
+      border-color: var(--accent-color);
+    }
+
+    /* Stats Panel */
+    .stats-panel {
+      background-color: var(--bg-secondary);
+      border-bottom: 1px solid var(--panel-border);
+      padding: 0.75rem 1.5rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 0.75rem;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    .stat-value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--accent-color);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .progress-bar-container {
+      grid-column: 1 / -1;
+      width: 100%;
+      height: 6px;
+      background-color: var(--bg-tertiary);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 0.15rem;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent-color), var(--success-color));
+      transition: width 0.15s ease-out;
+    }
+
+    /* Main Container */
+    main {
+      flex: 1;
+      min-height: 0;
+      max-width: 980px;
+      width: 100%;
+      margin: 0.75rem auto;
+      padding: 0 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      overflow: hidden;
+    }
+
+    /* Article Meta */
+    .article-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-bottom: 1px solid var(--panel-border);
+      padding-bottom: 0.4rem;
+      flex-shrink: 0;
+    }
+
+    .article-title {
+      font-size: 1.15rem;
+      font-weight: 600;
+    }
+
+    .article-author {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    /* Text Display Area */
+    .text-display-card {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      padding: 1.5rem 1.75rem;
+      flex: 1;
+      min-height: 180px;
+      overflow-y: auto;
+      position: relative;
+      font-size: 1.3rem;
+      line-height: 2.2;
+      letter-spacing: 0.05em;
+      user-select: none;
+      scroll-behavior: smooth;
+      outline: none;
+    }
+
+    .char {
+      display: inline-block;
+      padding: 0 1px;
+      border-radius: 3px;
+      transition: background-color 0.12s, color 0.12s;
+    }
+
+    .char.done {
+      color: var(--success-color);
+      font-weight: 500;
+      opacity: 0.95;
+    }
+
+    .char.active {
+      background-color: var(--current-char-bg);
+      box-shadow: 0 0 0 2px var(--current-char-border);
+      color: var(--text-main);
+      font-weight: 700;
+    }
+
+    .char.pending {
+      color: var(--text-muted);
+      opacity: 0.85;
+    }
+
+    .char.linebreak {
+      display: inline-block;
+      width: 0;
+      margin-right: 0.1em;
+    }
+
+    .char.linebreak::after {
+      content: "\A";
+      white-space: pre;
+    }
+
+    /* Typing Input Box */
+    .typing-input-card {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .input-instruction {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .input-instruction span.kbd {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--panel-border);
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-family: monospace;
+      color: var(--text-main);
+    }
+
+    .input-field-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    #typing-input {
+      width: 100%;
+      font-size: 1.35rem;
+      padding: 0.85rem 1.1rem;
+      border-radius: 8px;
+      background-color: var(--bg-tertiary);
+      border: 2px solid var(--panel-border);
+      color: var(--text-main);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+      transition: border-color 0.15s;
+    }
+
+    #typing-input:focus {
+      border-color: var(--accent-color);
+    }
+
+    #typing-input.error {
+      border-color: var(--error-color);
+      animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both;
+    }
+
+    @keyframes shake {
+      10%, 90% { transform: translate3d(-1px, 0, 0); }
+      20%, 80% { transform: translate3d(2px, 0, 0); }
+      30%, 50%, 70% { transform: translate3d(-3px, 0, 0); }
+      40%, 60% { transform: translate3d(3px, 0, 0); }
+    }
+
+    /* Current Target Word Preview */
+    .target-preview {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.05rem;
+      padding: 0.4rem 0.2rem;
+      color: var(--text-muted);
+    }
+
+    .target-preview-text {
+      color: var(--accent-color);
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+
+    /* Modals */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background-color: #1e2433;
+      border: 1px solid #3b82f6;
+      border-radius: 14px;
+      max-width: 560px;
+      width: 90%;
+      padding: 2.2rem;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9);
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      transform: translateY(15px);
+      transition: transform 0.15s ease;
+    }
+
+    [data-theme="light"] .modal-card {
+      background-color: #ffffff;
+      border-color: #0284c7;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-overlay.active .modal-card {
+      transform: translateY(0);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--panel-border);
+      padding-bottom: 0.75rem;
+    }
+
+    .modal-header h2 {
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    [data-theme="light"] .modal-header h2 {
+      color: #0f172a;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.6rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0.2rem 0.5rem;
+    }
+
+    .modal-close:hover {
+      color: var(--text-main);
+      background: none;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin: 0.5rem 0;
+    }
+
+    .result-box {
+      background-color: #262f42;
+      border: 1px solid #374151;
+      padding: 1.1rem;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    [data-theme="light"] .result-box {
+      background-color: #f8fafc;
+      border-color: #e2e8f0;
+    }
+
+    .result-box .val {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--accent-color);
+      margin-top: 0.2rem;
+    }
+
+    .result-rank-box {
+      grid-column: 1 / -1;
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.1), rgba(52, 211, 153, 0.1));
+      border: 1px solid var(--accent-color);
+    }
+
+    .result-rank-box .val {
+      font-size: 2.4rem;
+      color: var(--success-color);
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 0.5rem 1.5rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--panel-border);
+      background-color: var(--bg-secondary);
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 640px) {
+      .text-display-card {
+        font-size: 1.05rem;
+        padding: 1.25rem;
+        max-height: 320px;
+      }
+      #typing-input {
+        font-size: 1.15rem;
+        padding: 0.65rem 0.85rem;
+      }
+      .stats-panel {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+  </style>
+</head>
+<body data-theme="dark">
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <span class="brand-icon">⌨️</span>
+      <h1>速打 <span style="font-size: 0.85rem; font-weight: 400; color: var(--text-muted);">(Hayauchi) - 日本語長文タイピング</span></h1>
+    </div>
+
+    <div class="controls-bar">
+      <select id="preset-select" title="文章を選択">
+        <option value="0">太宰治『走れメロス』</option>
+        <option value="1">中島敦『山月記』</option>
+        <option value="2">夏目漱石『吾輩は猫である』</option>
+        <option value="3">宮沢賢治『注文の多い料理店』</option>
+        <option value="4">芥川龍之介『羅生門』</option>
+        <option value="custom">✏️ 自分で文章を貼り付ける...</option>
+      </select>
+
+      <button id="btn-restart" class="btn-outline" title="最初からやり直す">
+        🔄 リセット
+      </button>
+
+      <button id="btn-sound" class="btn-outline" title="サウンド切替">
+        🔊 効果音: ON
+      </button>
+
+      <button id="btn-theme" class="btn-outline" title="テーマ切替">
+        🌙
+      </button>
+    </div>
+  </header>
+
+  <!-- Realtime Stats Panel -->
+  <section class="stats-panel">
+    <div class="stat-item">
+      <span class="stat-label">経過時間</span>
+      <span class="stat-value" id="stat-time">00:00</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">タイピング速度</span>
+      <span class="stat-value" id="stat-cpm">0 <span style="font-size: 0.8rem; font-weight: normal; color: var(--text-muted);">文字/分</span></span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">進捗</span>
+      <span class="stat-value" id="stat-progress">0%</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">正確率</span>
+      <span class="stat-value" id="stat-accuracy">100%</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">ミス打鍵</span>
+      <span class="stat-value" id="stat-mistakes" style="color: var(--text-muted);">0</span>
+    </div>
+
+    <div class="progress-bar-container">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+  </section>
+
+  <!-- Main Typing Area -->
+  <main>
+    <div class="article-info">
+      <div class="article-title" id="article-title">走れメロス</div>
+      <div class="article-author" id="article-author">太宰治 （文字数: <span id="char-total-count">0</span>字）</div>
+    </div>
+
+    <!-- Text Display -->
+    <div class="text-display-card" id="text-display">
+      <!-- Characters will be injected here -->
+    </div>
+
+    <!-- Next / Target Preview -->
+    <div class="target-preview">
+      <span>次の入力目安:</span>
+      <span class="target-preview-text" id="target-preview-text">...</span>
+    </div>
+
+    <!-- Typing Input Box -->
+    <div class="typing-input-card">
+      <div class="input-instruction">
+        <span>💡 日本語IMEをONにして入力し、確定（Enter）してください。句読点や英数字もそのまま入力できます。</span>
+        <span>フォーカス維持: <span class="kbd">常に有効</span></span>
+      </div>
+      <div class="input-field-wrapper">
+        <input 
+          type="text" 
+          id="typing-input" 
+          placeholder="ここをクリックして日本語を入力..." 
+          autocomplete="off" 
+          autocorrect="off" 
+          autocapitalize="off" 
+          spellcheck="false"
+        >
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    日本語長文タイピング練習ソフト 速打 (Hayauchi) &bull; ブラウザ単一HTML完結 &bull; 青空文庫パブリックドメインテキスト使用
+  </footer>
+
+  <!-- Custom Text Modal -->
+  <div class="modal-overlay" id="custom-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>カスタム文章の設定</h2>
+        <button class="modal-close" id="btn-close-custom">&times;</button>
+      </div>
+      <p style="font-size: 0.9rem; color: var(--text-muted);">
+        練習したい文章を以下に貼り付けてください（長文ニュース、レポート、書籍の一節など）。
+      </p>
+      <input type="text" id="custom-title-input" placeholder="文章のタイトル（省略可）" style="width: 100%;">
+      <textarea id="custom-textarea" rows="8" placeholder="ここに文章を貼り付けてください..." style="width: 100%; resize: vertical;"></textarea>
+      <div class="modal-actions">
+        <button class="btn-outline" id="btn-cancel-custom">キャンセル</button>
+        <button id="btn-apply-custom" style="background-color: var(--accent-color); color: #fff;">この文章で開始</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Result Modal -->
+  <div class="modal-overlay" id="result-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>🎉 タイピング完了！</h2>
+        <button class="modal-close" id="btn-close-result">&times;</button>
+      </div>
+
+      <div class="result-grid">
+        <div class="result-box result-rank-box">
+          <div class="stat-label">総合評価ランク</div>
+          <div class="val" id="res-rank">S</div>
+        </div>
+        <div class="result-box">
+          <div class="stat-label">所要時間</div>
+          <div class="val" id="res-time">00:00</div>
+        </div>
+        <div class="result-box">
+          <div class="stat-label">入力速度 (CPM)</div>
+          <div class="val" id="res-cpm">0 <span style="font-size: 0.8rem; font-weight: normal;">文字/分</span></div>
+        </div>
+        <div class="result-box">
+          <div class="stat-label">入力文字数</div>
+          <div class="val" id="res-chars">0</div>
+        </div>
+        <div class="result-box">
+          <div class="stat-label">正確率</div>
+          <div class="val" id="res-accuracy">100%</div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-outline" id="btn-result-next">別の文章を選ぶ</button>
+        <button id="btn-result-retry" style="background-color: var(--accent-color); color: #fff;">もう一度練習する</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ========================================================
+       PRESET ARTICLES (青空文庫 パブリックドメイン名作)
+       ======================================================== */
+    const PRESETS = [
+      {
+        title: "走れメロス",
+        author: "太宰治",
+        text: `メロスは激怒した。必ず、かの邪智暴虐の王を除かなければならぬと決意した。メロスには政治がわからぬ。メロスは、村の牧人である。笛を吹き、羊と遊んで暮して来た。けれども邪悪に対しては、人一倍に敏感であった。きょう未明メロスは村を出発し、野を越え山越え、十里はなれた此のシラクスの市にやって来た。メロスには父も、母も無い。女房も無い。十六の、内気な妹と二人暮しだ。この妹は、村の或る律気な一牧人を、近々、花婿として迎える事になっていた。結婚式も間近かなのである。メロスは、それゆえ、花嫁の衣裳やら祝宴の御馳走やらを買いに、はるばる市にやって来たのだ。品々を買いまわり、ついでに街の小路を歩いた。メロスには竹馬の友があった。セリヌンティウスである。今は此のシラクスの市で、石工をしている。その友を、これから訪ねてみるつもりなのだ。久しく逢わなかったのだから、訪ねて行くのが楽しみである。歩いているうちにメロスは、まちの様子を怪しく思った。ひっそりしている。もう既に日も落ちて、まちの暗いのは当りまえだが、けれども、何やら、夜のせいばかりでは無く、市全体が、うっそうと気味悪い。沈黙がある。`
+      },
+      {
+        title: "山月記",
+        author: "中島敦",
+        text: `隴西の李徴は博学才穎、天宝の末年、若くして名を虎榜に連ね、ついで江南尉に補せられたが、性、狷介、自ら恃むところ頗る厚く、賤吏に甘んずるを潔しとしなかった。いくばくもなく官を退いた後は、故山、略略に帰臥し、人と交りを絶って、ひたすら詩作に耽った。官吏となって膝を俗悪な大官の前に屈するよりは、詩家としての名を死後百年に遺そうとしたのである。しかし、文名は容易に揚がらず、生活は日を逐うて苦しくなる。李徴はようやく焦躁に駆られて来た。この頃からその容貌も峭刻となり、肉落ち骨露れ、眼光のみ徒らに炯々として、曾て進士に登第した頃の豊頬の美少年の俤は、何処にも求めようもなくなった。数年の後、貧窮に堪えず、妻子の衣食のために、遂に節を屈して、再び東へ赴き、一地方官吏の職を奉ずることになった。一方、これは、己の詩業に半ば絶望したためでもある。曾ての同輩は既に遙か高位に進み、彼が昔、鈍物として歯牙にもかけなかった連中の下風に立つことは、往年の儁才李徴の自尊心を如何に傷つけたかは、想像に難くない。`
+      },
+      {
+        title: "吾輩は猫である",
+        author: "夏目漱石",
+        text: `吾輩は猫である。名前はまだ無い。どこで生れたかとんと見当がつかぬ。何でも薄暗いじめじめした所でニャーニャー泣いていた事だけは記憶している。吾輩はここで始めて人間というものを見た。しかもあとで聞くとそれは書生という人間中で一番獰悪な種族であったそうだ。この書生というのは時々我々を捕えて煮て食うという話である。しかしその当時は何という考もなかったから別段恐しいとも思わなかった。ただ彼の掌に載せられてスーと持ち上げられた時何だかフワフワした感じがあったばかりである。掌の上で少し落ちついて書生の顔を見たのがいわゆる人間というものの見始であろう。この時妙なものだと思った感じが今でも残っている。第一毛をもって装飾されべきはずの顔がつるつるしてまるで薬缶だ。その後猫にも大分逢ったがこんな片輪には一度も出会わした事がない。のみならず顔の真中があまりに突起している。そうしてその穴の中から時々ぷうぷうと煙を吹く。どうも咽せぽくて実に弱った。これが人間の飲む煙草というものである事はようやくこの頃知った。`
+      },
+      {
+        title: "注文の多い料理店",
+        author: "宮沢賢治",
+        text: `二人の若い紳士が、すっかりイギリスの兵隊のかたちをして、ぴかぴかする鉄砲をかついで、白熊のような犬を二疋つれて、しんきむすぶような山奥を、あるいておりました。二人は、ぜいたくな獲物をねらって、ここまでやって来たのでした。「ぜんたい、ここらはどうも山が深すぎるね。鳥も獣も一疋も居らん。」「いや、居るはずだよ。もうすこし奥へ行けば、鹿や山猫くらいは、いくらでも居るさ。」二人は、そんなことを言いながら、枯葉をざくざくふんで、どんどん山奥へはいって行きました。ところが、どういうわけか、つれて来た犬が二疋とも、めまいを起こして、死んでしまいました。「これは困ったな。二疋で二千四百円も損をした。」「ぼくは二千八百円損をした。」二人は、ため息をつきました。風がどうと吹いてきて、草はざわざわ、木の葉はかさかさ、木はごとごとと鳴りました。「どうも腹がへった。さっきから何か食べたくてたまらないんだ。」「ぼくもそうだ。どこかに、うまいものでも食わせる店はないかなあ。」`
+      },
+      {
+        title: "羅生門",
+        author: "芥川龍之介",
+        text: `ある日の暮方の事である。一人の下人が、羅生門の下で雨やみを待っていた。広い門の下には、この男のほかに誰もいない。ただ、所々丹塗の剥げた、大きな円柱に、蟋蟀が一匹とまっている。羅生門が、朱雀大路にある以上は、この男のほかにも、雨やみをする市女笠や揉烏帽子が、もう二三人はありそうなものである。それが、この男のほかには誰もいない。なぜかと云うと、この二三年、京都には、地震とか辻風とか火事とか饑饉とかいう災いがつづいて起った。そこで洛中のさびれ方は一通りではない。旧記によると、仏像や仏具を打ち砕いて、その薪にするような始末である。洛中がその始末であるから、羅生門の修理などは、元より誰も捨てて顧みる者がなかった。するとその荒れ果てたのをよい事にして、狐狸が棲む。盗人が棲む。とうとうしまいには、引取り手のない死人を、この門へ持って来て、棄てて行くと云う習慣さえ出来た。そこで、日の目が見えなくなると、誰でも気味を悪がって、この門の近所へは足ぶみをしないことになってしまったのである。`
+      }
+    ];
+
+    /* ========================================================
+       SOUND GENERATOR (Web Audio API - No external assets)
+       ======================================================== */
+    class SoundEffects {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) {
+            this.ctx = new AudioContextClass();
+          }
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      playKey() {
+        if (!this.enabled || !this.ctx) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(600, this.ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(300, this.ctx.currentTime + 0.04);
+          gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.04);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.04);
+        } catch (e) {}
+      }
+
+      playConfirm() {
+        if (!this.enabled || !this.ctx) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(880, this.ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(1320, this.ctx.currentTime + 0.08);
+          gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.09);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.09);
+        } catch (e) {}
+      }
+
+      playError() {
+        if (!this.enabled || !this.ctx) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(180, this.ctx.currentTime);
+          osc.frequency.linearRampToValueAtTime(120, this.ctx.currentTime + 0.12);
+          gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.12);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.12);
+        } catch (e) {}
+      }
+
+      playComplete() {
+        if (!this.enabled || !this.ctx) return;
+        try {
+          const notes = [523.25, 659.25, 783.99, 1046.50]; // C E G C
+          notes.forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, this.ctx.currentTime + idx * 0.1);
+            gain.gain.setValueAtTime(0.15, this.ctx.currentTime + idx * 0.1);
+            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + idx * 0.1 + 0.3);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(this.ctx.currentTime + idx * 0.1);
+            osc.stop(this.ctx.currentTime + idx * 0.1 + 0.35);
+          });
+        } catch (e) {}
+      }
+    }
+
+    /* ========================================================
+       TYPING GAME ENGINE
+       ======================================================== */
+    class TypingGame {
+      constructor() {
+        this.sound = new SoundEffects();
+        this.currentArticleIndex = 0;
+        this.article = PRESETS[0];
+        this.fullText = "";
+        this.cleanText = ""; // Normalized text
+        this.currentIndex = 0;
+        this.mistakesCount = 0;
+        this.totalKeystrokes = 0;
+        this.correctChars = 0;
+        this.startTime = null;
+        this.timerInterval = null;
+        this.isFinished = false;
+
+        this.charElements = [];
+        this.dom = {
+          presetSelect: document.getElementById('preset-select'),
+          btnRestart: document.getElementById('btn-restart'),
+          btnSound: document.getElementById('btn-sound'),
+          btnTheme: document.getElementById('btn-theme'),
+          articleTitle: document.getElementById('article-title'),
+          articleAuthor: document.getElementById('article-author'),
+          charTotalCount: document.getElementById('char-total-count'),
+          textDisplay: document.getElementById('text-display'),
+          targetPreviewText: document.getElementById('target-preview-text'),
+          typingInput: document.getElementById('typing-input'),
+          statTime: document.getElementById('stat-time'),
+          statCpm: document.getElementById('stat-cpm'),
+          statProgress: document.getElementById('stat-progress'),
+          statAccuracy: document.getElementById('stat-accuracy'),
+          statMistakes: document.getElementById('stat-mistakes'),
+          progressBar: document.getElementById('progress-bar'),
+          customModal: document.getElementById('custom-modal'),
+          customTitleInput: document.getElementById('custom-title-input'),
+          customTextarea: document.getElementById('custom-textarea'),
+          btnApplyCustom: document.getElementById('btn-apply-custom'),
+          btnCancelCustom: document.getElementById('btn-cancel-custom'),
+          btnCloseCustom: document.getElementById('btn-close-custom'),
+          resultModal: document.getElementById('result-modal'),
+          resRank: document.getElementById('res-rank'),
+          resTime: document.getElementById('res-time'),
+          resCpm: document.getElementById('res-cpm'),
+          resChars: document.getElementById('res-chars'),
+          resAccuracy: document.getElementById('res-accuracy'),
+          btnResultNext: document.getElementById('btn-result-next'),
+          btnResultRetry: document.getElementById('btn-result-retry'),
+          btnCloseResult: document.getElementById('btn-close-result')
+        };
+
+        this.bindEvents();
+        this.loadArticle(this.article);
+      }
+
+      bindEvents() {
+        // Preset change
+        this.dom.presetSelect.addEventListener('change', (e) => {
+          const val = e.target.value;
+          if (val === 'custom') {
+            this.openCustomModal();
+          } else {
+            const idx = parseInt(val, 10);
+            this.currentArticleIndex = idx;
+            this.loadArticle(PRESETS[idx]);
+          }
+        });
+
+        // Controls
+        this.dom.btnRestart.addEventListener('click', () => this.restart());
+        this.dom.btnSound.addEventListener('click', () => this.toggleSound());
+        this.dom.btnTheme.addEventListener('click', () => this.toggleTheme());
+
+        // Keep input focused when clicking text display
+        this.dom.textDisplay.addEventListener('click', () => {
+          this.dom.typingInput.focus({ preventScroll: true });
+        });
+
+        // Typing events
+        let isComposing = false;
+
+        this.dom.typingInput.addEventListener('compositionstart', () => {
+          this.sound.init();
+          isComposing = true;
+          this.ensureTimerStarted();
+        });
+
+        this.dom.typingInput.addEventListener('compositionupdate', (e) => {
+          this.sound.init();
+          this.ensureTimerStarted();
+          this.updateTargetPreview();
+        });
+
+        this.dom.typingInput.addEventListener('compositionend', (e) => {
+          isComposing = false;
+          this.handleInputCommit();
+        });
+
+        this.dom.typingInput.addEventListener('input', (e) => {
+          this.sound.init();
+          this.ensureTimerStarted();
+          if (!isComposing) {
+            this.handleInputCommit();
+          }
+        });
+
+        // Enter key backup check
+        this.dom.typingInput.addEventListener('keydown', (e) => {
+          this.sound.init();
+          this.ensureTimerStarted();
+          if (e.key === 'Enter' && !isComposing) {
+            this.handleInputCommit();
+          }
+        });
+
+        // Custom text modal events
+        this.dom.btnCancelCustom.addEventListener('click', () => this.closeCustomModal());
+        this.dom.btnCloseCustom.addEventListener('click', () => this.closeCustomModal());
+        this.dom.btnApplyCustom.addEventListener('click', () => this.applyCustomText());
+
+        // Result modal events
+        this.dom.btnCloseResult.addEventListener('click', () => this.closeResultModal());
+        this.dom.btnResultRetry.addEventListener('click', () => {
+          this.closeResultModal();
+          this.restart();
+        });
+        this.dom.btnResultNext.addEventListener('click', () => {
+          this.closeResultModal();
+          const nextIdx = (this.currentArticleIndex + 1) % PRESETS.length;
+          this.dom.presetSelect.value = nextIdx;
+          this.currentArticleIndex = nextIdx;
+          this.loadArticle(PRESETS[nextIdx]);
+        });
+
+        // Focus input on load
+        window.addEventListener('load', () => {
+          this.dom.typingInput.focus({ preventScroll: true });
+        });
+      }
+
+      toggleSound() {
+        this.sound.init();
+        this.sound.enabled = !this.sound.enabled;
+        this.dom.btnSound.textContent = this.sound.enabled ? '🔊 効果音: ON' : '🔈 効果音: OFF';
+      }
+
+      toggleTheme() {
+        const current = document.body.getAttribute('data-theme') || 'dark';
+        const next = current === 'dark' ? 'light' : 'dark';
+        document.body.setAttribute('data-theme', next);
+        this.dom.btnTheme.textContent = next === 'dark' ? '🌙' : '☀️';
+      }
+
+      ensureTimerStarted() {
+        if (!this.startTime && !this.isFinished) {
+          this.startTime = Date.now();
+          this.timerInterval = setInterval(() => this.updateTimerAndStats(), 250);
+        }
+      }
+
+      loadArticle(art) {
+        this.article = art;
+        this.fullText = art.text.trim();
+        this.cleanText = this.fullText.replace(/\r\n/g, '\n');
+        this.dom.articleTitle.textContent = art.title;
+        this.dom.articleAuthor.textContent = `${art.author} （文字数: ${this.cleanText.length}字）`;
+        this.dom.charTotalCount.textContent = this.cleanText.length;
+        this.restart();
+      }
+
+      restart() {
+        if (this.timerInterval) {
+          clearInterval(this.timerInterval);
+          this.timerInterval = null;
+        }
+        this.startTime = null;
+        this.currentIndex = 0;
+        this.mistakesCount = 0;
+        this.totalKeystrokes = 0;
+        this.correctChars = 0;
+        this.isFinished = false;
+
+        this.dom.typingInput.value = '';
+        this.dom.typingInput.classList.remove('error');
+        this.dom.statTime.textContent = '00:00';
+        this.dom.statCpm.innerHTML = '0 <span style="font-size: 0.8rem; font-weight: normal; color: var(--text-muted);">文字/分</span>';
+        this.dom.statProgress.textContent = '0%';
+        this.dom.statAccuracy.textContent = '100%';
+        this.dom.statMistakes.textContent = '0';
+        this.dom.statMistakes.style.color = 'var(--text-muted)';
+        this.dom.progressBar.style.width = '0%';
+
+        this.renderText();
+        this.updateTargetPreview();
+        this.dom.typingInput.focus({ preventScroll: true });
+      }
+
+      renderText() {
+        this.dom.textDisplay.innerHTML = '';
+        this.charElements = [];
+        const fragment = document.createDocumentFragment();
+
+        for (let i = 0; i < this.cleanText.length; i++) {
+          const char = this.cleanText[i];
+          const span = document.createElement('span');
+          span.className = 'char pending';
+          span.dataset.index = i;
+
+          if (char === '\n') {
+            span.classList.add('linebreak');
+            span.textContent = ' ';
+          } else {
+            span.textContent = char;
+          }
+
+          fragment.appendChild(span);
+          this.charElements.push(span);
+        }
+
+        this.dom.textDisplay.appendChild(fragment);
+        this.updateCharClasses();
+      }
+
+      updateCharClasses() {
+        if (this.charElements.length === 0) return;
+
+        for (let i = 0; i < this.charElements.length; i++) {
+          const el = this.charElements[i];
+          if (i < this.currentIndex) {
+            el.className = 'char done';
+            if (this.cleanText[i] === '\n') el.classList.add('linebreak');
+          } else if (i === this.currentIndex) {
+            el.className = 'char active';
+            if (this.cleanText[i] === '\n') el.classList.add('linebreak');
+          } else {
+            el.className = 'char pending';
+            if (this.cleanText[i] === '\n') el.classList.add('linebreak');
+          }
+        }
+
+        // Scroll active char into view inside the text-display container only
+        const activeEl = this.charElements[this.currentIndex];
+        const container = this.dom.textDisplay;
+        if (activeEl && container) {
+          const containerRect = container.getBoundingClientRect();
+          const elRect = activeEl.getBoundingClientRect();
+          const relativeTop = elRect.top - containerRect.top + container.scrollTop;
+          const targetScrollTop = relativeTop - (container.clientHeight / 2) + (elRect.height / 2);
+          container.scrollTo({
+            top: Math.max(0, targetScrollTop),
+            behavior: this.currentIndex === 0 ? 'auto' : 'smooth'
+          });
+        }
+      }
+
+      updateTargetPreview() {
+        if (this.currentIndex >= this.cleanText.length) {
+          this.dom.targetPreviewText.textContent = "完了！";
+          return;
+        }
+
+        // Show next 15 characters
+        const preview = this.cleanText.slice(this.currentIndex, this.currentIndex + 20).replace(/\n/g, ' ↵ ');
+        this.dom.targetPreviewText.textContent = preview;
+      }
+
+      handleInputCommit() {
+        if (this.isFinished) return;
+
+        let inputVal = this.dom.typingInput.value;
+        if (!inputVal) return;
+
+        // Auto-skip line breaks in cleanText if next char is newline
+        while (this.currentIndex < this.cleanText.length && this.cleanText[this.currentIndex] === '\n') {
+          this.currentIndex++;
+        }
+
+        if (this.currentIndex >= this.cleanText.length) {
+          this.finish();
+          return;
+        }
+
+        // Check how many characters match the text starting from currentIndex
+        let matchedCount = 0;
+        let hasMismatch = false;
+
+        for (let i = 0; i < inputVal.length; i++) {
+          let textIdx = this.currentIndex + matchedCount;
+
+          // Skip linebreaks in source if encountered
+          while (textIdx < this.cleanText.length && this.cleanText[textIdx] === '\n') {
+            textIdx++;
+            matchedCount++;
+          }
+
+          if (textIdx >= this.cleanText.length) {
+            break;
+          }
+
+          const targetChar = this.cleanText[textIdx];
+          const inputChar = inputVal[i];
+
+          // Normalize compare (handle fullwidth / halfwidth spaces or punctuation)
+          if (this.isCharMatch(inputChar, targetChar)) {
+            matchedCount++;
+          } else {
+            hasMismatch = true;
+            break;
+          }
+        }
+
+        this.totalKeystrokes += inputVal.length;
+
+        if (matchedCount > 0) {
+          this.currentIndex += matchedCount;
+          this.correctChars += matchedCount;
+          this.sound.playConfirm();
+
+          // Clear the matched part from input
+          this.dom.typingInput.value = inputVal.slice(matchedCount);
+          this.dom.typingInput.classList.remove('error');
+
+          this.updateCharClasses();
+          this.updateTargetPreview();
+          this.updateTimerAndStats();
+
+          if (this.currentIndex >= this.cleanText.length) {
+            this.finish();
+            return;
+          }
+        }
+
+        if (hasMismatch) {
+          this.mistakesCount++;
+          this.sound.playError();
+          this.dom.typingInput.classList.add('error');
+          setTimeout(() => {
+            this.dom.typingInput.classList.remove('error');
+          }, 350);
+          this.updateTimerAndStats();
+        }
+      }
+
+      isCharMatch(a, b) {
+        if (a === b) return true;
+        // Space variations
+        if ((a === ' ' || a === '　') && (b === ' ' || b === '　')) return true;
+        // Quote variations
+        if (("「“\"".includes(a)) && ("「“\"".includes(b))) return true;
+        if (("」”\"".includes(a)) && ("」”\"".includes(b))) return true;
+        return false;
+      }
+
+      updateTimerAndStats() {
+        if (!this.startTime) return;
+
+        const now = Date.now();
+        const elapsedSec = Math.max(1, Math.floor((now - this.startTime) / 1000));
+        const minutes = Math.floor(elapsedSec / 60);
+        const seconds = elapsedSec % 60;
+        this.dom.statTime.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+        // CPM (Characters Per Minute)
+        const cpm = Math.round((this.correctChars / elapsedSec) * 60);
+        this.dom.statCpm.innerHTML = `${cpm} <span style="font-size: 0.8rem; font-weight: normal; color: var(--text-muted);">文字/分</span>`;
+
+        // Progress
+        const percent = Math.min(100, Math.floor((this.currentIndex / this.cleanText.length) * 100));
+        this.dom.statProgress.textContent = `${percent}% (${this.currentIndex}/${this.cleanText.length})`;
+        this.dom.progressBar.style.width = `${percent}%`;
+
+        // Accuracy
+        const totalAttempts = this.correctChars + this.mistakesCount;
+        const accuracy = totalAttempts > 0 ? Math.round((this.correctChars / totalAttempts) * 100) : 100;
+        this.dom.statAccuracy.textContent = `${accuracy}%`;
+
+        // Mistakes
+        this.dom.statMistakes.textContent = this.mistakesCount;
+        if (this.mistakesCount > 0) {
+          this.dom.statMistakes.style.color = 'var(--error-color)';
+        }
+      }
+
+      finish() {
+        this.isFinished = true;
+        if (this.timerInterval) {
+          clearInterval(this.timerInterval);
+          this.timerInterval = null;
+        }
+
+        this.sound.playComplete();
+        this.dom.typingInput.value = '';
+        this.dom.typingInput.blur();
+
+        const elapsedSec = Math.max(1, Math.floor((Date.now() - this.startTime) / 1000));
+        const minutes = Math.floor(elapsedSec / 60);
+        const seconds = elapsedSec % 60;
+        const timeStr = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        const cpm = Math.round((this.correctChars / elapsedSec) * 60);
+        const totalAttempts = this.correctChars + this.mistakesCount;
+        const accuracy = totalAttempts > 0 ? Math.round((this.correctChars / totalAttempts) * 100) : 100;
+
+        // Rank evaluation
+        let rank = 'C';
+        if (cpm >= 350 && accuracy >= 98) rank = 'SS';
+        else if (cpm >= 280 && accuracy >= 95) rank = 'S';
+        else if (cpm >= 200 && accuracy >= 90) rank = 'A';
+        else if (cpm >= 140 && accuracy >= 85) rank = 'B';
+
+        this.dom.resRank.textContent = rank;
+        this.dom.resTime.textContent = timeStr;
+        this.dom.resCpm.innerHTML = `${cpm} <span style="font-size: 0.8rem; font-weight: normal;">文字/分</span>`;
+        this.dom.resChars.textContent = `${this.correctChars} 字`;
+        this.dom.resAccuracy.textContent = `${accuracy}%`;
+
+        this.dom.resultModal.classList.add('active');
+      }
+
+      openCustomModal() {
+        this.dom.customTitleInput.value = '';
+        this.dom.customTextarea.value = '';
+        this.dom.customModal.classList.add('active');
+        this.dom.customTextarea.focus();
+      }
+
+      closeCustomModal() {
+        this.dom.customModal.classList.remove('active');
+        this.dom.presetSelect.value = this.currentArticleIndex;
+        this.dom.typingInput.focus({ preventScroll: true });
+      }
+
+      applyCustomText() {
+        const title = this.dom.customTitleInput.value.trim() || 'カスタムテキスト';
+        const text = this.dom.customTextarea.value.trim();
+
+        if (!text) {
+          alert('文章を入力してください。');
+          return;
+        }
+
+        const customArticle = {
+          title: title,
+          author: 'ユーザー設定',
+          text: text
+        };
+
+        this.closeCustomModal();
+        this.loadArticle(customArticle);
+      }
+
+      closeResultModal() {
+        this.dom.resultModal.classList.remove('active');
+      }
+    }
+
+    // Initialize application
+    const app = new TypingGame();
+  </script>
+</body>
+</html>
