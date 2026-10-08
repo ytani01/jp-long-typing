@@ -5,6 +5,11 @@
 
 **すぐに試す: https://ytani01.github.io/jp-long-typing/**
 
+https://github.com/user-attachments/assets/6a59d1eb-0fea-4e91-b951-f491ec981455
+
+練習文を選び、読みを打って変換・確定するたびに緑の字が進む。時間切れで結果が出て、履歴に苦手の分析が出る。
+変換は Chromium の DevTools Protocol で再現したもので、実際の IME ではない。撮り直しは `node tools/record-demo.mjs`（先に `python3 -m http.server 8080`）。
+
 ## 主な特徴
 
 - **実践的な日本語入力・変換対応**:
