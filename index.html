@@ -92,13 +92,6 @@
       flex-wrap: wrap;
     }
 
-    /* 取得のボタンと設定のあいだの区切り（TODO-013） */
-    .controls-sep {
-      width: 1px;
-      height: 1.5rem;
-      background-color: var(--panel-border);
-    }
-
     /* 制限時間の選択欄を、枠線だけのボタンに揃える（TODO-013） */
     #time-limit-select {
       background-color: transparent;
@@ -144,6 +137,11 @@
       flex-shrink: 0;
     }
 
+    button:disabled {
+      opacity: 0.5;
+      cursor: wait;
+    }
+
     button.btn-outline {
       background-color: transparent;
     }
@@ -161,7 +159,8 @@
       /* 本文の列（main の幅 980px）に揃える（TODO-012） */
       padding: 0.75rem max(1.5rem, calc((100% - 980px) / 2 + 1.5rem));
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      /* 時間の欄には時間設定とリセットも並べるので広くする（TODO-022） */
+      grid-template-columns: 2fr repeat(4, 1fr);
       gap: 0.75rem;
       text-align: center;
       flex-shrink: 0;
@@ -171,6 +170,18 @@
       display: flex;
       flex-direction: column;
       gap: 0.2rem;
+    }
+
+    .time-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .time-row select, .time-row button {
+      font-size: 0.8rem;
+      padding: 0.3rem 0.55rem;
     }
 
     .stat-label {
@@ -345,13 +356,6 @@
 
     .input-field-wrapper {
       position: relative;
-      display: flex;
-      align-items: stretch;
-      gap: 0.75rem;
-    }
-
-    #btn-restart {
-      flex-shrink: 0;
     }
 
     #typing-input {
@@ -596,7 +600,6 @@
       .text-display-card {
         font-size: 1.05rem;
         padding: 1.25rem;
-        max-height: 320px;
       }
       #typing-input {
         font-size: 1.15rem;
@@ -606,16 +609,61 @@
       #typing-input::placeholder {
         font-size: 0.85rem;
       }
-      .stats-panel {
-        grid-template-columns: repeat(3, 1fr);
+      /* 本文を広く見せるため、上の帯を詰める（TODO-022） */
+      header {
+        padding: 0.5rem 1rem;
+        flex-wrap: nowrap;
+        gap: 0.5rem;
       }
-      /* 入力欄の幅を削らないよう、リセットは次の行へ回す（TODO-013） */
-      .input-field-wrapper {
-        flex-wrap: wrap;
+      .brand h1 {
+        font-size: 1.05rem;
+        white-space: nowrap;
       }
-      /* 折り返すと行の端に残るので、区切りは出さない */
-      .controls-sep {
+      .controls-bar {
+        gap: 0.4rem;
+        flex-wrap: nowrap;
+      }
+      header .btn-label, #btn-fetch-news .btn-label {
         display: none;
+      }
+      header button, #btn-fetch-news {
+        padding: 0.45rem;
+      }
+      .stats-panel {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.3rem 0.5rem;
+        padding: 0.5rem 1rem;
+      }
+      .time-item {
+        grid-column: 1 / -1;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 0.6rem;
+      }
+      .stat-value {
+        font-size: 1.05rem;
+      }
+      .stat-label {
+        font-size: 0.7rem;
+        letter-spacing: 0;
+      }
+      .article-info {
+        flex-wrap: nowrap;
+      }
+      .preset-group {
+        flex: 1;
+      }
+      .article-author {
+        white-space: nowrap;
+      }
+      /* 文字数と同じ行に収めるため、「練習文」は読み上げ用にだけ残す */
+      .preset-label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
       }
     }
   </style>
@@ -630,18 +678,6 @@
     </div>
 
     <div class="controls-bar">
-      <button id="btn-fetch-news" class="btn-outline" title="Claude・NHKの最新ニュースを取得・更新"></button>
-
-      <span class="controls-sep" aria-hidden="true"></span>
-
-      <select id="time-limit-select" title="制限時間を設定">
-        <option value="0">時間無制限</option>
-        <option value="30" selected>30秒</option>
-        <option value="60">1分</option>
-        <option value="180">3分</option>
-        <option value="300">5分</option>
-      </select>
-
       <button id="btn-history" class="btn-outline" title="これまでの結果を見る"></button>
 
       <button id="btn-sound" class="btn-outline" title="サウンド切替"></button>
@@ -652,9 +688,19 @@
 
   <!-- Realtime Stats Panel -->
   <section class="stats-panel">
-    <div class="stat-item">
+    <div class="stat-item time-item">
       <span class="stat-label" id="label-time">経過時間</span>
-      <span class="stat-value" id="stat-time">00:00</span>
+      <div class="time-row">
+        <span class="stat-value" id="stat-time">00:00</span>
+        <select id="time-limit-select" title="制限時間を設定">
+          <option value="0">時間無制限</option>
+          <option value="30" selected>30秒</option>
+          <option value="60">1分</option>
+          <option value="180">3分</option>
+          <option value="300">5分</option>
+        </select>
+        <button id="btn-restart" class="btn-outline" title="最初からやり直す（Esc）"></button>
+      </div>
     </div>
     <div class="stat-item">
       <span class="stat-label">タイピング速度</span>
@@ -703,8 +749,9 @@
             <option value="custom">✏️ 自分で文章を貼り付ける...</option>
           </optgroup>
         </select>
+        <button id="btn-fetch-news" class="btn-outline" title="Claude・NHKの最新ニュースを取得・更新"></button>
       </span>
-      <div class="article-author" id="article-author">太宰治 （文字数: <span id="char-total-count">0</span>字）</div>
+      <div class="article-author" id="article-author">文字数: 0字</div>
     </div>
 
     <!-- Text Display -->
@@ -724,7 +771,6 @@
           autocapitalize="off" 
           spellcheck="false"
         >
-        <button id="btn-restart" class="btn-outline" title="最初からやり直す"></button>
       </div>
     </div>
   </main>
@@ -974,7 +1020,13 @@
 
     function setButton(btn, icon, label = '') {
       btn.innerHTML = `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[icon]}</svg>`;
-      if (label) btn.append(label);
+      // 狭い画面では文字を隠してアイコンだけにする（TODO-022）
+      if (label) {
+        const span = document.createElement('span');
+        span.className = 'btn-label';
+        span.textContent = label;
+        btn.append(span);
+      }
     }
 
     // 結果の履歴（TODO-018）。件数の上限は設けない。
@@ -1228,7 +1280,6 @@
           optgroupNews: document.getElementById('optgroup-news'),
           optgroupClaude: document.getElementById('optgroup-claude'),
           articleAuthor: document.getElementById('article-author'),
-          charTotalCount: document.getElementById('char-total-count'),
           textDisplay: document.getElementById('text-display'),
           typingInput: document.getElementById('typing-input'),
           statTime: document.getElementById('stat-time'),
@@ -1268,6 +1319,8 @@
         setButton(this.dom.btnRestart, 'reset', 'リセット');
         setButton(this.dom.btnHistory, 'history', '履歴');
         setButton(this.dom.btnSound, 'soundOn', '効果音: ON');
+        // 狭い画面ではアイコンだけになるので、ON/OFF を読み上げにも渡す（TODO-022）
+        this.dom.btnSound.setAttribute('aria-pressed', 'true');
         setButton(this.dom.btnTheme, 'moon');
         // 内蔵のデータで始め、裏で最新を取得する
         this.applyNewsData(FALLBACK_NHK_NEWS);
@@ -1348,6 +1401,13 @@
 
         // Enter key backup check
         this.dom.typingInput.addEventListener('keydown', (e) => {
+          // 手を離さずにリセットできるように（TODO-022）。変換中の Esc は IME の取り消しに使う
+          // Safari は変換を取り消す Esc を compositionend の後に送るので、keyCode 229 でも見分ける
+          if (e.key === 'Escape' && !isComposing && !e.isComposing && e.keyCode !== 229) {
+            e.preventDefault();
+            this.restart();
+            return;
+          }
           this.sound.init();
           this.ensureTimerStarted();
           if (e.key === 'Enter' && !isComposing) {
@@ -1388,6 +1448,7 @@
         this.sound.init();
         this.sound.enabled = !this.sound.enabled;
         setButton(this.dom.btnSound, this.sound.enabled ? 'soundOn' : 'soundOff', this.sound.enabled ? '効果音: ON' : '効果音: OFF');
+        this.dom.btnSound.setAttribute('aria-pressed', String(this.sound.enabled));
       }
 
       toggleTheme() {
@@ -1406,9 +1467,12 @@
 
       // 「ニュース更新」: 両方を取り直して CHANGELOG を出す（リリースノートは取り直さない。TODO-017）
       async refreshNews() {
+        // 狭い画面では「取得中...」が隠れるので、押せなくして取得中だと分かるようにする（TODO-022）
+        this.dom.btnFetchNews.disabled = true;
         setButton(this.dom.btnFetchNews, 'news', '取得中...');
         const [nhkOk, claudeOk] = await Promise.all([this.fetchNhkNews(), this.fetchClaudeNews()]);
         setButton(this.dom.btnFetchNews, 'news', 'ニュース更新');
+        this.dom.btnFetchNews.disabled = false;
         this.dom.presetSelect.value = 'claude-code';
         this.loadArticle(this.claudeCode);
         const failed = [!claudeOk && 'Claude Code CHANGELOG', !nhkOk && 'NHKニュース'].filter(Boolean);
@@ -1529,8 +1593,7 @@
         // 行頭行末の隣でない空白）は半角スペース 1 個にする。全角・半角は変えない（TODO-005）
         this.cleanText = this.fullText.replace(/\r\n?|[\u2028\u2029]/g, '\n')
           .replace(/[^\S\n]+/g, (sp, i, str) => isWordSide(str[i - 1]) && isWordSide(str[i + sp.length]) ? ' ' : '');
-        this.dom.articleAuthor.textContent = `${art.author} （文字数: ${this.cleanText.length}字）`;
-        this.dom.charTotalCount.textContent = this.cleanText.length;
+        this.dom.articleAuthor.textContent = `文字数: ${this.cleanText.length}字`;
         if (selectValue !== null) {
           this.dom.presetSelect.value = selectValue;
         }
