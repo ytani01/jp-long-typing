@@ -941,6 +941,11 @@
     // update-release-notes skill が書き換える（2026-10-09 時点の内容。最新 3 版の先頭 8 項目の訳。TODO-020）
     const CLAUDE_CODE_JA = [
       {
+        "title": "Claude Code 2.1.295（日本語）",
+        "author": "Claude Code CHANGELOG",
+        "text": "コマンドフックとHTTPフックにonFailure: \"block\"を追加しました。起動できない、タイムアウトした、想定外のコードで終了したフックは、操作を通さずにブロックします。\nProgram Status Protocol（OSC 7501）に対応しました。これを実装した端末では、Claude Codeが作業中か、入力を待っているか、終わったかを表示できます。\n/copyの選択欄に引用の文章を追加しました。下書きしたメッセージを、>の記号を付けずにコピーできます。\nclaude plugin install、enable、disable、marketplace addで、書き込む先の設定ファイルが読み込まれないときに警告を出すようにしました。\nclaude -pの実行が最後のターンの後も終わらないとき、何を待っているかを標準エラー出力に1行表示するようにしました（端末のときだけ）。\nClaude apps gatewayのBedrock、Vertex、Foundryなどのクラウドのアップストリームで、timeouts.upstream_ttfb_msに対応しました。設定した値で、ストリームが始まるまでの時間を制限し、超えるとフェイルオーバーするか502を返します。\n←で今のツールが終わるのを待っている間にターンを止めたとき、「Backgrounding cancelled」のメッセージを出すようにしました。\nClaude apps gatewayのすべてのアップストリームに、省略できるmodelsの一覧を追加しました。一覧にあるモデルだけを、フェイルオーバーのときも含めてそこへ送ります。項目の中の*は1つだけワイルドカードとして使えます。"
+      },
+      {
         "title": "Claude Code 2.1.294（日本語）",
         "author": "Claude Code CHANGELOG",
         "text": "「〜するコマンドをブロックする」のような指示の形で書いたpromptフックとagentフックが、ブロックすべきものを許してしまう問題を直しました。\nStopとSubagentStopの、「ビルドが壊れていたら続ける」のような指示の形で書いたpromptフックの判定を改善しました。Claudeが早く止まりにくくなります。"
@@ -949,11 +954,6 @@
         "title": "Claude Code 2.1.293（日本語）",
         "author": "Claude Code CHANGELOG",
         "text": "Claude Haiku 5.5（claude-haiku-5-5）を追加しました。Anthropic APIの既定のHaikuモデルになりました。コンテキストは100万トークンで、料金は100万トークンあたり$0.10/$0.50（100Kトークンを超えるプロンプトは$0.50/$2.50）です。\nsubagentStatusLineのペイロードにagentTypeを追加しました。スクリプトでカスタムのサブエージェントの種類を見分けられます。\nmod向けに、$.tool.registerにisDeferredを追加しました。falseにすると、ツールのスキーマをtool searchで探されるまで隠さず、最初からプロンプトに載せます。\nClaudeが、コンテキストの圧縮の直前に自分が行った操作を、圧縮の後に行ったものとして扱い、終えた作業を取り消したりやり直したりすることがある問題を直しました。\nHTTPのMCP接続が、閉じるまで送ったリクエストをすべて保持し続けるメモリーリークを直しました。\nClaudeの作業中に送ったメッセージが、←でセッションをバックグラウンドに移したときに失われる問題を直しました。キューにあるメッセージを移せないときは、←を押しても移さずに、その旨を表示します。\n/modelのeffortを←/→で変えるとき、最も高いレベルや低いレベルを越えて反対側に回り込み、誤ってLowをモデルの既定のeffortとして保存することがある問題を直しました。\n--chromeで始めたセッションで、/tuiがClaude in Chromeとの接続を切り、--no-chromeを無視する問題を直しました。"
-      },
-      {
-        "title": "Claude Code 2.1.292（日本語）",
-        "author": "Claude Code CHANGELOG",
-        "text": "claude plugin installに--marketplace <source>を追加しました。必要なら、claude plugin marketplace addと同じポリシーの確認を経てマーケットプレイスを追加し、そこからプラグインをインストールします。\nAgentツールにeffortパラメーターを追加しました。指定したeffortのレベルで、Claudeがサブエージェントを動かします。\n過負荷（529）のリクエストを再試行するときのバックオフの基本の待ち時間を長くする、環境変数CLAUDE_CODE_OVERLOADED_RETRY_BASE_DELAY_MSを追加しました。\nprompt.autocompleteを追加しました。modがこのイベントにフックして、プロンプト欄の補完の一覧に独自の行を足せます。\nmod向けに、$.model.completeにプロンプトキャッシュを追加しました。promptとsystemにテキストのブロックを渡せるようになり、ブロックにcache: trueを付けると、そこまでのリクエストをキャッシュします。\nagent.spawnのmodフックに、ワークフローのエージェントも、その実行と番号を添えて渡すようにしました。modがそれを拒否できます。\npermissionMode: autoのサブエージェント定義が、auto modeを使えないとき（設定で無効にされている、circuit breakerが働いた、モデルが対応していない）にもauto modeに入る問題を直しました。\nサンドボックスで動くコマンドが、~/.claude/seed-admin以下にある/ultrareviewのアップロード用のファイルのコピーを読めてしまう問題を直しました。"
       }
     ];
 
