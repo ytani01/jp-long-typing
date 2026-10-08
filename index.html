@@ -290,7 +290,7 @@
       overflow-y: auto;
       position: relative;
       font-size: 1.3rem;
-      line-height: 2.2;
+      line-height: 3; /* 行の下に入力欄を置く隙間を空ける（TODO-025） */
       letter-spacing: 0.05em;
       user-select: none;
       scroll-behavior: smooth;
@@ -300,6 +300,7 @@
     .char {
       display: inline-block;
       white-space: pre; /* inline-block の中の空白を幅 0 に潰さない */
+      line-height: 1.4; /* 枠を字の高さにとどめ、下の入力欄と重ねない（TODO-025） */
       padding: 0 1px;
       border-radius: 3px;
       transition: background-color 0.12s, color 0.12s;
@@ -342,31 +343,22 @@
       margin-right: 0.1em;
     }
 
-    /* Typing Input Box */
-    .typing-input-card {
-      background-color: var(--bg-secondary);
-      border: 1px solid var(--panel-border);
-      border-radius: 10px;
-      padding: 1.25rem;
-      box-shadow: var(--shadow);
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-
-    .input-field-wrapper {
-      position: relative;
-    }
-
+    /* 入力欄はお手本の今の行の真下に置く。位置は placeInput() が決める（TODO-025） */
     #typing-input {
-      width: 100%;
-      font-size: 1.35rem;
-      padding: 0.85rem 1.1rem;
-      border-radius: 8px;
+      position: absolute;
+      top: 0;
+      left: 0;
+      min-width: 15em; /* 案内文の 13 字が収まる幅 */
+      font-size: 1rem;
+      line-height: 1.2;
+      letter-spacing: normal;
+      padding: 0 0.35rem;
+      border-radius: 4px;
       background-color: var(--bg-tertiary);
-      border: 2px solid var(--panel-border);
+      border: 1px solid var(--panel-border);
       color: var(--text-main);
-      box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+      user-select: text; /* 親の user-select: none を受け継ぐと Safari で打てない */
+      -webkit-user-select: text;
       transition: border-color 0.15s;
     }
 
@@ -599,15 +591,8 @@
     @media (max-width: 640px) {
       .text-display-card {
         font-size: 1.05rem;
+        line-height: 3.4; /* 字が小さいぶん、入力欄と次の行の間が詰まるので広げる（TODO-025） */
         padding: 1.25rem;
-      }
-      #typing-input {
-        font-size: 1.15rem;
-        padding: 0.65rem 0.85rem;
-      }
-      /* 案内文が狭い入力欄でも欠けないようにする */
-      #typing-input::placeholder {
-        font-size: 0.85rem;
       }
       /* 本文を広く見せるため、上の帯を詰める（TODO-022） */
       header {
@@ -754,24 +739,17 @@
       <div class="article-author" id="article-author">文字数: 0字</div>
     </div>
 
-    <!-- Text Display -->
+    <!-- Text Display（入力欄も中に置く。TODO-025） -->
     <div class="text-display-card" id="text-display">
-      <!-- Characters will be injected here -->
-    </div>
-
-    <!-- Typing Input Box -->
-    <div class="typing-input-card">
-      <div class="input-field-wrapper">
-        <input 
-          type="text" 
-          id="typing-input" 
-          placeholder="入力すると計測が始まります" 
-          autocomplete="off" 
-          autocorrect="off" 
-          autocapitalize="off" 
-          spellcheck="false"
-        >
-      </div>
+      <input 
+        type="text" 
+        id="typing-input" 
+        placeholder="入力すると計測が始まります" 
+        autocomplete="off" 
+        autocorrect="off" 
+        autocapitalize="off" 
+        spellcheck="false"
+      >
     </div>
   </main>
 
@@ -1438,6 +1416,9 @@
         this.dom.btnHistory.addEventListener('click', () => this.openHistoryModal());
         this.dom.btnCloseHistory.addEventListener('click', () => this.closeHistoryModal());
 
+        // 幅が変わると折り返しが変わるので、入力欄を置き直す（TODO-025）
+        window.addEventListener('resize', () => this.placeInput());
+
         // Focus input on load
         window.addEventListener('load', () => {
           this.dom.typingInput.focus({ preventScroll: true });
@@ -1643,7 +1624,6 @@
       }
 
       renderText() {
-        this.dom.textDisplay.innerHTML = '';
         this.charElements = [];
         const fragment = document.createDocumentFragment();
         let word = null; // 英単語の文字をまとめる span
@@ -1710,19 +1690,28 @@
           this.charElements.push(span);
         }
 
-        this.dom.textDisplay.appendChild(fragment);
+        // 入力欄は残して文字だけ入れ替える。入力欄がいったん外れてフォーカスが切れるので、呼び出し元でフォーカスし直す
+        this.dom.textDisplay.replaceChildren(fragment, this.dom.typingInput);
         this.updateCharClasses();
+      }
+
+      // 次に打つ文字の位置。改行は打たずに読み飛ばすので、行末の改行なら次の行の頭（TODO-025）
+      activeIndex() {
+        let i = this.currentIndex;
+        while (this.cleanText[i] === '\n') i++;
+        return i;
       }
 
       updateCharClasses() {
         if (this.charElements.length === 0) return;
 
+        const active = this.activeIndex();
         for (let i = 0; i < this.charElements.length; i++) {
           const el = this.charElements[i];
-          if (i < this.currentIndex) {
+          if (i < active) {
             el.className = 'char done';
             if (this.cleanText[i] === '\n') el.classList.add('linebreak');
-          } else if (i === this.currentIndex) {
+          } else if (i === active) {
             el.className = 'char active';
             if (this.cleanText[i] === '\n') el.classList.add('linebreak');
           } else {
@@ -1732,9 +1721,9 @@
         }
 
         // Scroll active char into view inside the text-display container only
-        const activeEl = this.charElements[this.currentIndex];
+        const activeEl = this.placeInput();
         const container = this.dom.textDisplay;
-        if (activeEl && container) {
+        if (activeEl) {
           const containerRect = container.getBoundingClientRect();
           const elRect = activeEl.getBoundingClientRect();
           const relativeTop = elRect.top - containerRect.top + container.scrollTop;
@@ -1744,6 +1733,22 @@
             behavior: this.currentIndex === 0 ? 'auto' : 'smooth'
           });
         }
+      }
+
+      // 入力欄を今の文字の真下に動かし、その文字の span を返す（TODO-025）
+      placeInput() {
+        const el = this.charElements[this.activeIndex()];
+        if (!el) return null;
+        const container = this.dom.textDisplay;
+        const input = this.dom.typingInput;
+        const style = getComputedStyle(container);
+        // 今の文字の枠のすぐ下
+        const top = el.offsetTop + el.offsetHeight + 3;
+        // 行末近くでも欄が右にはみ出さないように左へ寄せる
+        const maxLeft = container.clientWidth - parseFloat(style.paddingRight) - input.offsetWidth;
+        input.style.top = `${top}px`;
+        input.style.left = `${Math.max(0, Math.min(el.offsetLeft, maxLeft))}px`;
+        return el;
       }
 
       handleInputCommit() {
@@ -1855,10 +1860,8 @@
 
       // 入力欄に誤りが残っているあいだ、お手本の今の文字に印を付ける
       markMiss(on) {
-        const el = this.charElements[this.currentIndex];
+        const el = this.charElements[this.activeIndex()];
         if (!el) return;
-        // 先頭の改行を読み飛ばした直後は、まだ改行に active が付いている
-        if (on && !el.classList.contains('active')) this.updateCharClasses();
         el.classList.toggle('miss', on);
       }
 

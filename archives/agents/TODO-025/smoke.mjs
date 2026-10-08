@@ -1,0 +1,10 @@
+import { chromium } from '/home/ytani/.local/lib/playwright/node_modules/playwright/index.mjs';
+const b = await chromium.launch(); const p = await b.newPage({viewport:{width:1280,height:800}});
+await p.goto('http://localhost:8080/'); await p.waitForTimeout(800);
+await p.selectOption('#preset-select','2'); await p.waitForTimeout(300);
+const m = () => p.evaluate(()=>{const a=document.querySelector('.char.active').getBoundingClientRect(),i=document.querySelector('#typing-input').getBoundingClientRect();return {charBottom:a.bottom|0,charLeft:a.left|0,inTop:i.top|0,inBottom:i.bottom|0,inLeft:i.left|0}});
+console.log(await m());
+const t = await p.evaluate(()=>[...document.querySelectorAll('.char')].slice(0,40).map(e=>e.textContent).join(''));
+await p.keyboard.insertText(t.slice(0,30)); await p.waitForTimeout(600);
+console.log(await m());
+await p.screenshot({path:process.argv[2]}); await b.close();
