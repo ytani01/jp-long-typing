@@ -19,6 +19,12 @@
 - ブラウザでの確認は **`node` から Playwright を使う**（Playwright 1.63 と
   Chromium は導入済み）。playwright MCP はこのプロジェクトでは使わない
   （`.claude/settings.local.json` で無効にしてある）
+- Playwright は `~/.local/lib/playwright/` に入れてある。探さずに、スクリプトの
+  先頭でこう読み込む
+
+  ```js
+  import { chromium } from '/home/ytani/.local/lib/playwright/node_modules/playwright/index.mjs';
+  ```
 - ページは `python3 -m http.server 8080` で配信して `http://localhost:8080/` を開く
 - IME の変換は Playwright では再現できない。確定後の文字の入力は
   `page.keyboard.insertText()` で代える
