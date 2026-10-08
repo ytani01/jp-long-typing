@@ -919,7 +919,7 @@
        ======================================================== */
     const CLAUDE_CODE_URL = 'https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md';
 
-    // update-release-notes skill が書き換える（2026-10-08 時点の内容）
+    // update-release-notes skill が書き換える（2026-10-09 時点の内容）
     const CLAUDE_NOTES = [
       {
         "title": "2026年10月8日の更新",
@@ -929,7 +929,7 @@
       {
         "title": "2026年10月7日の更新",
         "author": "Claude Platform リリースノート",
-        "text": "Claude Sonnet 5.5のプロンプトキャッシュの読み取り料金を、100万トークンあたり$0.20 USDから$0.10 USDに値下げしました。基本の入力料金の0.1倍から0.05倍になります。キャッシュの書き込みとその他の料金は変わりません。プロンプトキャッシュの料金を参照してください。\nClaude Haiku 5.5（claude-haiku-5-5）をリリースしました。大量の処理や応答の速さが求められる作業向けに調整した、最も高性能なモデルです。100万トークンのコンテキストウィンドウ、最大128kトークンの出力、effortパラメーター付きのadaptive thinkingを備えています。Claude API、Claude in Amazon Bedrock、Claude Platform on AWS、Claude on Google Cloud、Claude in Microsoft Foundryで利用できます。Claude Haiku 5.5の新機能を参照してください。\nClaude Haiku 4.5向けに書かれたコードは、Claude Haiku 5.5では動かなくなることがあります。手動のextended thinking（budget_tokens）は400エラーを返し、adaptive thinkingが既定で有効なので、応答がthinkingブロックから始まることがあります。同じ文章でもトークン数が多く数えられます。移行ガイドを参照してください。モデル固有のプロンプトのパターンは、Claude Haiku 5.5へのプロンプトを参照してください。\nPythonとTypeScriptのSDKに、browser useツールとcomputer useツールのクラスがベータ版で加わりました。クラスを継承し、自分のブラウザーやデスクトップの自動化に合わせてツールごとにメソッドを1つ書きます。ツールのループ、ブラウザーに設定したURLとファイルのポリシー、承認のコールバックはSDKが実行します。SDKのツールセットによるbrowser useとcomputer useを参照してください。\nClaudeのMaxプランとTeamプランに、毎月のAPIクレジットが含まれるようになりました。受け取り方は、MaxプランとTeamプランのAPIクレジットを参照してください。\nClaude Managed Agentsで、limitedネットワークのクラウド環境が、allowed_hostsをweb_searchツールとweb_fetchツールにも適用するようになりました。allowed_hostsに合わないホストのURLをweb_fetchで呼ぶと、エージェントにurl_not_allowedのエラー結果が返ります。web_searchは、そのようなホストの結果を除きます。allowed_hostsにホストが1つも無いときは、どちらのツールもページや検索結果を返しません。allow_package_managersとallow_mcp_serversは、これらのツールにホストを足しません。ツールからホストに届くようにするには、そのホストをallowed_hostsに足してください。サンドボックスからも届くようになります。unrestrictedネットワークとセルフホストの環境では、これらのツールは制限されません。環境のネットワークを参照してください。\nlimitedネットワークでは、有効なウェブツールのallowed_domainsにallowed_hostsに含まれない項目があると、セッションの作成が400エラーで失敗します。そのような項目を足すセッションの更新も同じです。allowed_hostsの項目は、*.で始まらない限り1つのホストにだけ一致するので、docs.example.comは[\"example.com\"]に含まれません。エラーを直すには、そのホストをallowed_hostsに足すか、allowed_domainsからその項目を外してください。web searchとweb fetchのドメインを制限するを参照してください。"
+        "text": "Claude Sonnet 5.5のプロンプトキャッシュの読み取り料金を、100万トークンあたり$0.20 USDから$0.10 USDに値下げしました。基本の入力料金の0.1倍から0.05倍になります。キャッシュの書き込みとその他の料金は変わりません。プロンプトキャッシュの料金を参照してください。\nClaude Haiku 5.5（claude-haiku-5-5）をリリースしました。大量の処理や応答の速さが求められる作業向けに調整した、最も高性能なモデルです。100万トークンのコンテキストウィンドウ、最大128kトークンの出力、effortパラメーター付きのadaptive thinkingを備えています。Claude API、Claude in Amazon Bedrock、Claude Platform on AWS、Claude on Google Cloud、Claude in Microsoft Foundryで利用できます。Claude Haiku 5.5の新機能を参照してください。\nClaude Haiku 4.5向けに書かれたコードは、Claude Haiku 5.5では動かなくなることがあります。手動のextended thinking（budget_tokens）は400エラーを返し、adaptive thinkingが既定で有効なので、応答がthinkingブロックから始まることがあります。同じ文章でもトークン数が多く数えられます。移行ガイドを参照してください。モデル固有のプロンプトのパターンは、Claude Haiku 5.5へのプロンプトを参照してください。\nPythonとTypeScriptのSDKに、browser useツールとcomputer useツールのクラスがベータ版で加わりました。クラスを継承し、自分のブラウザーやデスクトップの自動化に合わせてツールごとにメソッドを1つ書きます。ツールのループ、ブラウザーに設定したURLとファイルのポリシー、承認のコールバックはSDKが実行します。SDKのツールセットによるbrowser useとcomputer useを参照してください。\nClaudeのMaxプランとTeamプランに、毎月のAPIクレジットが含まれるようになりました。受け取り方は、MaxプランとTeamプランのAPIクレジットを参照してください。\nClaude Managed Agentsで、limitedネットワークのクラウド環境が、allowed_hostsをweb_searchツールとweb_fetchツールにも適用するようになりました。allowed_hostsに合わないホストのURLをweb_fetchで呼ぶと、エージェントにurl_not_allowedのエラー結果が返ります。web_searchは、そのようなホストの結果を除きます。allowed_hostsにホストが1つも無いときは、どちらのツールもページや検索結果を返しません。allow_package_managersとallow_mcp_serversは、これらのツールにホストを足しません。ツールからホストに届くようにするには、そのホストをallowed_hostsに足してください。サンドボックスからも届くようになります。unrestrictedネットワークとセルフホストの環境では、これらのツールは制限されません。環境のネットワークを参照してください。\nlimitedネットワークでは、有効なウェブツールのallowed_domainsにallowed_hostsに含まれない項目があると、セッションの作成が400エラーで失敗します。そのような項目を足すセッションの更新も同じです。allowed_hostsの項目は、*.で始まらない限り1つのホストにだけ一致するので、docs.example.comは[\"example.com\"]に含まれません。エラーを直すには、そのホストをallowed_hostsに足すか、allowed_domainsからその項目を外してください。web searchとweb fetchのドメインを制限するを参照してください。\nClaude Managed Agentsで、web_fetchツールが、セッションにすでに現れたURLだけを取得するようになりました。たとえば、ユーザーのメッセージの本文、web_searchの結果、web_fetchが以前に返したページに現れたURLです。データの持ち出しのリスクを減らします。Claude自身の出力、エージェントのシステムプロンプト、添付の文書、bash、read、MCPツールなどのツールの出力にだけ現れたURLは数えません。そのURLをweb_fetchで呼ぶと、エージェントにurl_not_in_prior_contextのエラー結果が返ります。エージェントにURLを取得させるには、user.messageイベントの本文でそのURLを送ってください。"
       },
       {
         "title": "2026年10月6日の更新",
@@ -938,8 +938,13 @@
       }
     ];
 
-    // update-release-notes skill が書き換える（2026-10-08 時点の内容。最新 3 版の先頭 8 項目の訳。TODO-020）
+    // update-release-notes skill が書き換える（2026-10-09 時点の内容。最新 3 版の先頭 8 項目の訳。TODO-020）
     const CLAUDE_CODE_JA = [
+      {
+        "title": "Claude Code 2.1.294（日本語）",
+        "author": "Claude Code CHANGELOG",
+        "text": "「〜するコマンドをブロックする」のような指示の形で書いたpromptフックとagentフックが、ブロックすべきものを許してしまう問題を直しました。\nStopとSubagentStopの、「ビルドが壊れていたら続ける」のような指示の形で書いたpromptフックの判定を改善しました。Claudeが早く止まりにくくなります。"
+      },
       {
         "title": "Claude Code 2.1.293（日本語）",
         "author": "Claude Code CHANGELOG",
@@ -949,11 +954,6 @@
         "title": "Claude Code 2.1.292（日本語）",
         "author": "Claude Code CHANGELOG",
         "text": "claude plugin installに--marketplace <source>を追加しました。必要なら、claude plugin marketplace addと同じポリシーの確認を経てマーケットプレイスを追加し、そこからプラグインをインストールします。\nAgentツールにeffortパラメーターを追加しました。指定したeffortのレベルで、Claudeがサブエージェントを動かします。\n過負荷（529）のリクエストを再試行するときのバックオフの基本の待ち時間を長くする、環境変数CLAUDE_CODE_OVERLOADED_RETRY_BASE_DELAY_MSを追加しました。\nprompt.autocompleteを追加しました。modがこのイベントにフックして、プロンプト欄の補完の一覧に独自の行を足せます。\nmod向けに、$.model.completeにプロンプトキャッシュを追加しました。promptとsystemにテキストのブロックを渡せるようになり、ブロックにcache: trueを付けると、そこまでのリクエストをキャッシュします。\nagent.spawnのmodフックに、ワークフローのエージェントも、その実行と番号を添えて渡すようにしました。modがそれを拒否できます。\npermissionMode: autoのサブエージェント定義が、auto modeを使えないとき（設定で無効にされている、circuit breakerが働いた、モデルが対応していない）にもauto modeに入る問題を直しました。\nサンドボックスで動くコマンドが、~/.claude/seed-admin以下にある/ultrareviewのアップロード用のファイルのコピーを読めてしまう問題を直しました。"
-      },
-      {
-        "title": "Claude Code 2.1.291（日本語）",
-        "author": "Claude Code CHANGELOG",
-        "text": "2.1.290で入った、クラウドセッションで許可の確認への回答が失われることがある不具合を直しました。\n2.1.288で入った、終了するときにセッションの最後のメッセージが失われることがある不具合を直しました。"
       }
     ];
 
