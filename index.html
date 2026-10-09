@@ -290,7 +290,7 @@
       overflow-y: auto;
       position: relative;
       font-size: 1.3rem;
-      line-height: 3; /* 行の下に入力欄を置く隙間を空ける（TODO-025） */
+      line-height: 4; /* 行の下に、入力した字と入力欄を置く隙間を空ける（TODO-025、TODO-028） */
       letter-spacing: 0.05em;
       user-select: none;
       scroll-behavior: smooth;
@@ -298,6 +298,7 @@
     }
 
     .char {
+      position: relative;
       display: inline-block;
       white-space: pre; /* inline-block の中の空白を幅 0 に潰さない */
       line-height: 1.4; /* 枠を字の高さにとどめ、下の入力欄と重ねない（TODO-025） */
@@ -312,23 +313,33 @@
       white-space: nowrap;
     }
 
+    /* 済んだ字は薄くする。正誤の色は下の入力した字に付ける（TODO-028） */
     .char.done {
-      color: var(--success-color);
-      font-weight: 500;
-      opacity: 0.95;
+      color: color-mix(in srgb, var(--text-muted) 60%, transparent); /* opacity だと下の入力した字まで薄くなる */
     }
+
+    /* お手本の字の真下に、入力した字を出す（TODO-028） */
+    .typed {
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.85em;
+      font-weight: 500;
+      line-height: 1.4;
+      height: 1.4em; /* 空でも高さを取り、入力欄の位置を変えない */
+      letter-spacing: 0;
+      white-space: pre;
+    }
+
+    .typed .ok { color: var(--success-color); }
+    .typed .ng { color: var(--error-color); }
 
     .char.active {
       background-color: var(--current-char-bg);
       box-shadow: 0 0 0 2px var(--current-char-border);
       color: var(--text-main);
       font-weight: 700;
-    }
-
-    /* 打ち違えたり抜かしたりして進んだ字（TODO-026） */
-    .char.done.missed {
-      color: var(--error-color);
-      text-decoration: underline wavy;
     }
 
     .char.pending {
@@ -590,7 +601,7 @@
     @media (max-width: 640px) {
       .text-display-card {
         font-size: 1.05rem;
-        line-height: 3.4; /* 字が小さいぶん、入力欄と次の行の間が詰まるので広げる（TODO-025） */
+        line-height: 4.4; /* 字が小さいぶん、入力欄と次の行の間が詰まるので広げる（TODO-025） */
         padding: 1.25rem;
       }
       /* 本文を広く見せるため、上の帯を詰める（TODO-022） */
@@ -1267,7 +1278,6 @@
         this.fullText = "";
         this.cleanText = ""; // Normalized text
         this.currentIndex = 0;
-        this.missed = new Set(); // ミスして進んだ字の位置（TODO-026）
         this.mistakesCount = 0;
         this.totalKeystrokes = 0;
         this.correctChars = 0;
@@ -1635,7 +1645,6 @@
         }
         this.startTime = null;
         this.currentIndex = 0;
-        this.missed = new Set();
         this.mistakesCount = 0;
         this.totalKeystrokes = 0;
         this.correctChars = 0;
@@ -1687,6 +1696,7 @@
           } else {
             span.textContent = char;
           }
+          span.appendChild(document.createElement('span')).className = 'typed';
 
           const last = fragment.lastChild;
           // 英数字は文字間隔を空けると単語がばらけて読みにくい（TODO-014）
@@ -1755,7 +1765,7 @@
         for (let i = 0; i < this.charElements.length; i++) {
           const el = this.charElements[i];
           if (i < active) {
-            el.className = this.missed.has(i) ? 'char done missed' : 'char done';
+            el.className = 'char done';
             if (this.cleanText[i] === '\n') el.classList.add('linebreak');
           } else if (i === active) {
             el.className = 'char active';
@@ -1788,8 +1798,9 @@
         const container = this.dom.textDisplay;
         const input = this.dom.typingInput;
         const style = getComputedStyle(container);
-        // 今の文字の枠のすぐ下
-        const top = el.offsetTop + el.offsetHeight + 3;
+        // 今の文字の下の、入力した字のすぐ下（TODO-028）
+        const typed = el.lastChild;
+        const top = el.offsetTop + typed.offsetTop + typed.offsetHeight + 3;
         // 行末近くでも欄が右にはみ出さないように左へ寄せる
         const maxLeft = container.clientWidth - parseFloat(style.paddingRight) - input.offsetWidth;
         input.style.top = `${top}px`;
@@ -1824,9 +1835,16 @@
         this.totalKeystrokes += inputVal.length;
         // 一致した字は、続いている所ごとに分ける（お手本に無い語を履歴に残さない）
         const runs = [];
-        let matched = 0, misses = 0, end = this.currentIndex, prev = null;
+        let matched = 0, misses = 0, end = this.currentIndex, prev = null, k = 0;
         for (const [op, j] of ops) {
           const i = idx[j]; // 余計な字は、次に打つ字の誤りとして数える
+          // 入力した字をお手本の字の下に出す。余計な字は直後の字の下に詰める。抜かした字の下は空ける（TODO-028）
+          if (op !== 'del') {
+            const t = document.createElement('span');
+            t.className = op === 'match' ? 'ok' : 'ng';
+            t.textContent = inputVal[k++];
+            if (i !== undefined) this.charElements[i].lastChild.appendChild(t);
+          }
           if (op === 'match') {
             if (prev === 'match') runs[runs.length - 1] += this.cleanText[i];
             else runs.push(this.cleanText[i]);
@@ -1834,7 +1852,6 @@
           } else {
             misses++;
             if (i !== undefined) this.recordMiss(i);
-            if (op !== 'ins') this.missed.add(i);
           }
           if (op !== 'ins') end = i + 1;
           prev = op;
