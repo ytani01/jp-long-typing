@@ -325,11 +325,10 @@
       font-weight: 700;
     }
 
-    /* 誤入力のあいだ、今の文字を赤くする（TODO-012） */
-    .char.active.miss {
-      background-color: var(--error-color);
-      box-shadow: 0 0 0 2px var(--error-color);
-      color: #fff;
+    /* 打ち違えたり抜かしたりして進んだ字（TODO-026） */
+    .char.done.missed {
+      color: var(--error-color);
+      text-decoration: underline wavy;
     }
 
     .char.pending {
@@ -980,6 +979,35 @@
       return code >= 0xFF01 && code <= 0xFF5E ? String.fromCharCode(code - 0xFEE0) : c;
     }
 
+    // 確定した字 a とお手本の続き b を編集距離で突き合わせる（TODO-026）。
+    // a は全部使い、b は先頭から何字使ってもよい。手数が同じなら b を少なく使う。
+    // 確定の最後の字の誤りは余計な字になり、お手本はその字で止まる（ずれを持ち越さない）。
+    // 返すのは [種類, b の位置] の列。種類は match / sub / del（b を抜かした）/
+    // ins（a の余計な字。位置は直後の b）
+    function alignInput(a, b, eq) {
+      const n = a.length, m = b.length;
+      const d = Array.from({ length: n + 1 }, (_, i) => Array.from({ length: m + 1 }, (_, j) => i + j));
+      for (let i = 1; i <= n; i++) {
+        for (let j = 1; j <= m; j++) {
+          d[i][j] = Math.min(d[i - 1][j - 1] + (eq(a[i - 1], b[j - 1]) ? 0 : 1), d[i - 1][j] + 1, d[i][j - 1] + 1);
+        }
+      }
+      let j = 0;
+      for (let k = 1; k <= m; k++) if (d[n][k] < d[n][j]) j = k;
+      const ops = [];
+      let i = n;
+      while (i > 0 || j > 0) {
+        if (i > 0 && j > 0 && d[i][j] === d[i - 1][j - 1] + (eq(a[i - 1], b[j - 1]) ? 0 : 1)) {
+          ops.push([eq(a[i - 1], b[j - 1]) ? 'match' : 'sub', --j]); i--;
+        } else if (j > 0 && d[i][j] === d[i][j - 1] + 1) {
+          ops.push(['del', --j]);
+        } else {
+          ops.push(['ins', j]); i--;
+        }
+      }
+      return ops.reverse();
+    }
+
     // 日本語の文字か（全角の英数字・記号 U+FF01〜U+FF5E は英単語の側に数える）
     function isJapanese(c) {
       return c !== undefined && /[\u3000-\u30ff\u4e00-\u9fff\uff00\uff5f-\uffef]/.test(c);
@@ -1239,6 +1267,7 @@
         this.fullText = "";
         this.cleanText = ""; // Normalized text
         this.currentIndex = 0;
+        this.missed = new Set(); // ミスして進んだ字の位置（TODO-026）
         this.mistakesCount = 0;
         this.totalKeystrokes = 0;
         this.correctChars = 0;
@@ -1590,6 +1619,7 @@
         }
         this.startTime = null;
         this.currentIndex = 0;
+        this.missed = new Set();
         this.mistakesCount = 0;
         this.totalKeystrokes = 0;
         this.correctChars = 0;
@@ -1709,7 +1739,7 @@
         for (let i = 0; i < this.charElements.length; i++) {
           const el = this.charElements[i];
           if (i < active) {
-            el.className = 'char done';
+            el.className = this.missed.has(i) ? 'char done missed' : 'char done';
             if (this.cleanText[i] === '\n') el.classList.add('linebreak');
           } else if (i === active) {
             el.className = 'char active';
@@ -1754,11 +1784,8 @@
       handleInputCommit() {
         if (this.isFinished) return;
 
-        let inputVal = this.dom.typingInput.value;
-        if (!inputVal) {
-          this.markMiss(false);
-          return;
-        }
+        const inputVal = this.dom.typingInput.value;
+        if (!inputVal) return;
 
         // Auto-skip line breaks in cleanText if next char is newline
         while (this.currentIndex < this.cleanText.length && this.cleanText[this.currentIndex] === '\n') {
@@ -1770,71 +1797,61 @@
           return;
         }
 
-        // Check how many characters match the text starting from currentIndex
-        let matchedCount = 0;
-        let consumed = 0; // 入力欄から削る文字数。読み飛ばした改行は入らない
-        let hasMismatch = false;
-
-        for (let i = 0; i < inputVal.length; i++) {
-          let textIdx = this.currentIndex + matchedCount;
-
-          // Skip linebreaks in source if encountered
-          while (textIdx < this.cleanText.length && this.cleanText[textIdx] === '\n') {
-            textIdx++;
-            matchedCount++;
-          }
-
-          if (textIdx >= this.cleanText.length) {
-            break;
-          }
-
-          const targetChar = this.cleanText[textIdx];
-          const inputChar = inputVal[i];
-
-          // Normalize compare (handle fullwidth / halfwidth spaces or punctuation)
-          if (this.isCharMatch(inputChar, targetChar)) {
-            matchedCount++;
-            consumed++;
-          } else {
-            hasMismatch = true;
-            break;
-          }
+        // お手本の続きを、改行を除いて取り出す。抜かしが入力の字数を超えても
+        // 手数は減らないので、入力の 2 倍あれば足りる
+        const idx = [];
+        for (let i = this.currentIndex; i < this.cleanText.length && idx.length < inputVal.length * 2; i++) {
+          if (this.cleanText[i] !== '\n') idx.push(i);
         }
+        const ops = alignInput(inputVal.split(''), idx.map(i => this.cleanText[i]), (a, b) => this.isCharMatch(a, b));
 
         this.totalKeystrokes += inputVal.length;
-
-        if (matchedCount > 0) {
-          this.currentIndex += matchedCount;
-          this.correctChars += matchedCount;
-          const now = Date.now();
-          this.recordChunk(this.cleanText.slice(this.currentIndex - matchedCount, this.currentIndex), now - (this.lastMatchAt || this.startTime));
-          this.lastMatchAt = now;
-          this.sound.playConfirm();
-
-          // Clear the matched part from input
-          this.dom.typingInput.value = inputVal.slice(consumed);
-          this.dom.typingInput.classList.remove('error');
-
-          this.updateCharClasses();
-          this.updateTimerAndStats();
-
-          if (this.currentIndex >= this.cleanText.length) {
-            this.finish();
-            return;
+        // 一致した字は、続いている所ごとに分ける（お手本に無い語を履歴に残さない）
+        const runs = [];
+        let matched = 0, misses = 0, end = this.currentIndex, prev = null;
+        for (const [op, j] of ops) {
+          const i = idx[j]; // 余計な字は、次に打つ字の誤りとして数える
+          if (op === 'match') {
+            if (prev === 'match') runs[runs.length - 1] += this.cleanText[i];
+            else runs.push(this.cleanText[i]);
+            matched++;
+          } else {
+            misses++;
+            if (i !== undefined) this.recordMiss(i);
+            if (op !== 'ins') this.missed.add(i);
           }
+          if (op !== 'ins') end = i + 1;
+          prev = op;
         }
 
-        if (hasMismatch) {
-          this.mistakesCount++;
-          this.recordMiss();
+        this.dom.typingInput.value = '';
+        this.currentIndex = end;
+
+        if (matched) {
+          this.correctChars += matched;
+          const now = Date.now();
+          const per = (now - (this.lastMatchAt || this.startTime)) / matched;
+          for (const run of runs) this.recordChunk(run, per * run.length);
+          this.lastMatchAt = now;
+          this.sound.playConfirm();
+          this.dom.typingInput.classList.remove('error');
+        }
+
+        if (misses > 0) {
+          this.mistakesCount += misses;
           this.sound.playError();
           this.dom.typingInput.classList.add('error');
           setTimeout(() => {
             this.dom.typingInput.classList.remove('error');
           }, 350);
-          this.updateTimerAndStats();
         }
-        this.markMiss(hasMismatch);
+
+        this.updateCharClasses();
+        this.updateTimerAndStats();
+
+        if (this.currentIndex >= this.cleanText.length) {
+          this.finish();
+        }
       }
 
       // 確定した字を、かかった時間を字数で割って字の種類ごとに足す（TODO-021）
@@ -1851,18 +1868,10 @@
       }
 
       // 誤りは、お手本の今の字に数える。例として前後 3 字を残す
-      recordMiss() {
-        const i = this.currentIndex;
+      recordMiss(i) {
         const c = this.cleanText[i];
         (this.stats.kinds[charKind(c)] ??= newKind()).miss++;
         (this.stats.miss[c] ??= [0, this.cleanText.slice(Math.max(0, i - 3), i + 4).replace(/\n/g, ' ')])[0]++;
-      }
-
-      // 入力欄に誤りが残っているあいだ、お手本の今の文字に印を付ける
-      markMiss(on) {
-        const el = this.charElements[this.activeIndex()];
-        if (!el) return;
-        el.classList.toggle('miss', on);
       }
 
       isCharMatch(a, b) {
@@ -1929,7 +1938,6 @@
         // 時間切れの直後に最後の文字が確定すると 2 回呼ばれる。結果は 1 回だけ出す（TODO-018）
         if (this.isFinished) return;
         this.isFinished = true;
-        this.markMiss(false);
         if (this.timerInterval) {
           clearInterval(this.timerInterval);
           this.timerInterval = null;
