@@ -549,41 +549,77 @@
       padding: 0.2rem 0.5rem;
     }
 
-    /* 苦手の分析（TODO-021） */
+    /* 苦手の分析（TODO-021）。字を大きくし、間を空ける（TODO-029） */
     .analysis {
-      margin-bottom: 1.25rem;
-      font-size: 0.9rem;
+      margin-bottom: 1.75rem;
+      font-size: 1rem;
+      line-height: 1.7;
     }
 
-    .analysis h3 {
-      font-size: 1rem;
-      margin: 0 0 0.5rem;
+    .analysis h3,
+    .history-wrap > h3 {
+      font-size: 1.15rem;
+      margin: 0 0 0.6rem;
     }
 
     .analysis ul {
-      margin: 0 0 0.75rem;
+      margin: 0 0 1.5rem;
       padding-left: 1.25rem;
+    }
+
+    .analysis li {
+      margin-bottom: 0.4rem;
     }
 
     .analysis-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
-      gap: 0.75rem 1.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+      gap: 1.5rem 2rem;
+    }
+
+    /* 字の種類の表は 1 行を占め、その下に 2 つの一覧を並べる */
+    .analysis-grid > :first-child {
+      grid-column: 1 / -1;
+    }
+
+    .analysis .history-table {
+      width: auto;
+      font-size: 1rem;
     }
 
     .analysis .history-table th {
       position: static;
     }
 
+    .analysis .history-table th:first-child,
+    .analysis .history-table td:first-child {
+      text-align: left;
+    }
+
     .analysis-grid h4 {
+      font-size: 1.05rem;
+      margin: 0 0 0.2rem;
+    }
+
+    .analysis-note {
       font-size: 0.85rem;
       color: var(--text-muted);
-      margin: 0 0 0.3rem;
+      margin: 0 0 0.6rem;
     }
 
     .analysis-grid ol {
       margin: 0;
       padding-left: 1.5rem;
+    }
+
+    @media (max-width: 640px) {
+      .analysis .history-table {
+        font-size: 0.9rem;
+      }
+      .analysis .history-table th,
+      .analysis .history-table td {
+        padding: 0.45rem 0.35rem;
+      }
     }
 
     .history-empty {
@@ -829,6 +865,7 @@
       </div>
       <div class="history-wrap">
         <section class="analysis" id="history-analysis"></section>
+        <h3>これまでの結果</h3>
         <table class="history-table">
           <thead>
             <tr>
@@ -2122,31 +2159,32 @@
         const table = el('table');
         table.className = 'history-table';
         const head = el('tr');
-        ['字の種類', '字数', '誤り率', '1 字あたり'].forEach(t => head.append(el('th', t)));
+        ['種類', '字数', '誤り率', '1 字の時間'].forEach(t => head.append(el('th', t)));
         table.append(head);
         for (const r of a.rows) {
           const tr = el('tr');
-          [r.kind, r.n, pct(r.rate), sec(r.per)].forEach(t => tr.append(el('td', t)));
+          [r.kind, r.n.toLocaleString(), pct(r.rate), sec(r.per)].forEach(t => tr.append(el('td', t)));
           table.append(tr);
         }
-        const list = (title, items) => {
+        const section = (title, note, ...body) => {
           const d = el('div');
-          d.append(el('h4', title));
-          if (items.length === 0) {
-            d.append(el('p', 'なし'));
-          } else {
-            const ol = el('ol');
-            items.forEach(t => ol.append(el('li', t)));
-            d.append(ol);
-          }
+          const p = el('p', note);
+          p.className = 'analysis-note';
+          d.append(el('h4', title), p, ...body);
           return d;
         };
-        const kindsBox = el('div');
-        kindsBox.append(el('h4', '字の種類ごと'), table);
+        const list = items => {
+          if (items.length === 0) return el('p', 'なし');
+          const ol = el('ol');
+          items.forEach(t => ol.append(el('li', t)));
+          return ol;
+        };
         grid.append(
-          kindsBox,
-          list('よく誤る字', a.missTop.map(([c, [n, ctx]]) => `「${c}」${n} 回（${ctx}）`)),
-          list('詰まった語', a.slowTop.map(([t, per]) => `${t}（1 字 ${sec(per)}）`))
+          section('字の種類ごと', '字数は確定した字の数。誤り率は、確定した字と誤りを合わせた数のうち、誤りの割合。1 字の時間は、1 字を打つのにかかった平均の時間。', table),
+          section('よく誤る字', '誤った回数の多い順。かっこ内は誤った箇所の例。',
+            list(a.missTop.map(([c, [n, ctx]]) => `「${c}」 ${n} 回（${ctx}）`))),
+          section('詰まった語', '1 字あたりの時間が、その回の平均の 2 倍を超えた語。遅い順。',
+            list(a.slowTop.map(([t, per]) => `${t}（1 字 ${sec(per)}）`)))
         );
         box.append(grid);
       }
