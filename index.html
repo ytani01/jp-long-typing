@@ -1410,7 +1410,8 @@
         this.dom.typingInput.addEventListener('keydown', (e) => {
           // 手を離さずにリセットできるように（TODO-022）。変換中の Esc は IME の取り消しに使う
           // Safari は変換を取り消す Esc を compositionend の後に送るので、keyCode 229 でも見分ける
-          if (e.key === 'Escape' && !isComposing && !e.isComposing && e.keyCode !== 229) {
+          // 長押しのリピートは見ない。モーダルを Esc で閉じたあとの押しっぱなしでリセットしないように（TODO-027）
+          if (e.key === 'Escape' && !e.repeat && !isComposing && !e.isComposing && e.keyCode !== 229) {
             e.preventDefault();
             this.restart();
             return;
@@ -1444,6 +1445,21 @@
         // History modal events（TODO-018）
         this.dom.btnHistory.addEventListener('click', () => this.openHistoryModal());
         this.dom.btnCloseHistory.addEventListener('click', () => this.closeHistoryModal());
+
+        // 開いているモーダルを Esc で閉じる（TODO-027）。capture で先に受け、入力欄の Esc（リセット）まで届かせない。
+        // 変換中の Esc は IME に任せる（見分け方は入力欄の Esc と同じ）
+        window.addEventListener('keydown', (e) => {
+          if (e.key !== 'Escape' || e.isComposing || e.keyCode === 229) return;
+          const close = [
+            [this.dom.resultModal, () => this.closeResultModal()],
+            [this.dom.customModal, () => this.closeCustomModal()],
+            [this.dom.historyModal, () => this.closeHistoryModal()],
+          ].find(([m]) => m.classList.contains('active'));
+          if (!close) return;
+          e.preventDefault();
+          e.stopPropagation();
+          close[1]();
+        }, true);
 
         // 幅が変わると折り返しが変わるので、入力欄を置き直す（TODO-025）
         window.addEventListener('resize', () => this.placeInput());

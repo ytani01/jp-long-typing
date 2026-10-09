@@ -1,0 +1,25 @@
+1 custom open: {"progress":"0/520","value":"","focus":"custom-textarea","active":["custom-modal"]}
+1 custom after Esc: {"progress":"0/520","value":"","focus":"typing-input","active":[]}
+1 history open: {"progress":"0/520","value":"","focus":"typing-input","active":["history-modal"]}
+1 history after Esc: {"progress":"0/520","value":"","focus":"typing-input","active":[]}
+finish focus: {"progress":"3/520","value":"","focus":"","active":["result-modal"]}
+1 result open: {"progress":"3/520","value":"","focus":"typing-input","active":["result-modal"]}
+1 result after Esc: {"progress":"3/520","value":"","focus":"typing-input","active":[]}
+finish focus: {"progress":"3/520","value":"","focus":"","active":["result-modal"]}
+2 before Esc (result open): {"progress":"3/520","value":"","focus":"typing-input","active":["result-modal"]}
+2 after Esc: {"progress":"3/520","value":"","focus":"typing-input","active":[]}
+3 custom focus after Esc: {"progress":"0/520","value":"","focus":"typing-input","active":[]}
+3 history focus after Esc: {"progress":"0/520","value":"","focus":"typing-input","active":[]}
+4 before composing Esc: {"progress":"3/520","value":"","focus":"custom-textarea","active":["custom-modal"]}
+4 after isComposing Esc: {"progress":"3/520","value":"","focus":"custom-textarea","active":["custom-modal"]}
+4 after keyCode229 Esc: {"progress":"3/520","value":"","focus":"custom-textarea","active":["custom-modal"]}
+4 after normal Esc: {"progress":"3/520","value":"","focus":"typing-input","active":[]}
+5 typed: {"progress":"3/520","value":"","focus":"typing-input","active":[]}
+5 after normal Esc (expect reset): {"progress":"0/520","value":"","focus":"typing-input","active":[]}
+5 typed again: {"progress":"3/520","value":"","focus":"typing-input","active":[]}
+5 after repeat Esc (expect not reset): {"progress":"3/520","value":"","focus":"typing-input","active":[]}
+finish focus: {"progress":"3/520","value":"","focus":"","active":["result-modal"]}
+6 before: {"progress":"3/520","value":"","focus":"typing-input","active":["result-modal"]}
+6 after: {"progress":"3/520","value":"","focus":"typing-input","active":[]}
+6 unchanged except active: {"progressSame":true,"valueSame":true,"resultClosed":true}
+9 console/page errors: []
