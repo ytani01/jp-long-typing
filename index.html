@@ -1157,7 +1157,7 @@
         const { n, ms, miss: m } = kinds[k];
         return { kind: k, n, rate: m / (n + m), per: n > 0 ? ms / n : 0, miss: m };
       });
-      const missTop = Object.entries(miss).sort((a, b) => b[1][0] - a[1][0]).slice(0, 10);
+      const missTop = Object.entries(miss).sort((a, b) => b[1][0] - a[1][0]).slice(0, 5);
       // 同じ語は、いちばん遅かった回だけを出す
       const slowTop = [...new Map(slow.sort((a, b) => a[1] - b[1])).entries()].reverse().slice(0, 5);
 
