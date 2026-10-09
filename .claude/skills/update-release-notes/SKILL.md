@@ -10,63 +10,41 @@ description: Claude Platform リリースノートの新しい 3 日分と、Cla
 反映する（TODO-017）。
 
 Claude Code の CHANGELOG は英語版をブラウザで取得するが、日本語版は無いので、
-同じ手順で訳して `CLAUDE_CODE_JA` に埋め込む（TODO-020）。下の 1〜4 を
-リリースノートと CHANGELOG の両方で行い、5 と 6 は 1 回にまとめる。
-2 の「何も変えずに終える」はその片方を飛ばす意味で、両方とも変わらないときだけ
-手順全体を終える。
+同じ手順で訳して `CLAUDE_CODE_JA` に埋め込む（TODO-020）。
 
 訳と埋め込みだけの定期のデータ更新なので、TODO 項目は立てず、確認の
 担当も分けない。下の「確かめる」を main が行ってコミットする。
 
+訳すところだけ Claude が行い、ほかは `notes.py` が行う（TODO-031）。
+作業用の JSON はスクラッチパッドに置く。手元では `~/bin/update-release-notes` に `notes.py` へのシンボリックリンクを張ってあり、どこからでも呼べる（リポジトリには含まない）。
+
 ```mermaid
 flowchart LR
-  A[curl で英語版を取得] --> B[新しい 3 日分 / 3 版を選ぶ] --> C[日本語に訳す] --> D[CLAUDE_NOTES / CLAUDE_CODE_JA を書き換える] --> E[ブラウザで確かめる] --> F[コミット]
+  A[notes.py fetch] -->|変更なし| Z[終える]
+  A -->|new / changed あり| C[ja を訳して書く] --> D[notes.py apply] --> E[notes.py check] --> F[コミット]
 ```
 
 ## 1. 取得する
 
 ```bash
-curl -sL --max-time 30 https://platform.claude.com/docs/en/release-notes/overview.md
+.claude/skills/update-release-notes/notes.py fetch <作業用.json>
 ```
 
-日本語版（`/docs/ja/`）は英語版より遅れるので使わない。
+- リリースノートは英語版（`/docs/en/`）を取る。日本語版は英語版より遅れるので使わない
+- リリースノートは同じ日付の見出しをまとめて新しい 3 日分、CHANGELOG は新しい 3 版の
+  先頭 8 項目まで（英語版の取得と同じ）を、それぞれ `en` に入れる
+- 前回の英語（`last-source.json`）と比べて、日・版ごとに `same` / `changed` / `new` を出す
+- 最後の行が「変更なし」なら、何も変えずに終える（片方だけ変わったときは、その片方だけ訳す）
+- 3 日分・3 版を読めない、項目が 0 件のものがある、というときはエラーで止まる。元の書式が変わっていないか見る
 
-CHANGELOG:
+## 2. 訳す
 
-```bash
-curl -sL --max-time 30 https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md
-```
+`changed` と `new` のものだけ、`ja` に訳を書く。`en` の 1 項目を `ja` の 1 要素にし、
+数と並びを揃える。`same` のものは今の訳をそのまま使うので書かない。
 
-## 2. 新しい 3 日分を選ぶ
-
-- `### October 7, 2026` のような見出しが 1 つの更新。**同じ日付の見出しが
-  続くことがある**ので、日付ごとにまとめ、新しい日付から 3 つ取る
-- 各見出しの下の `* ` か `- ` で始まる箇条書きを、その日の項目にする
-- 今の `CLAUDE_NOTES` と同じ 3 日分で、中身も変わっていなければ、
-  何も変えずに終える
-
-CHANGELOG:
-
-- `## 2.1.293` のような見出しが 1 版。新しい版から 3 つ取る
-- 各版の箇条書きは**先頭から 8 項目まで**にする（英語版の取得と同じ）
-- 今の `CLAUDE_CODE_JA` と同じ 3 版で、中身も変わっていなければ、何も変えずに終える
-
-## 3. 訳す
-
-- 1 日分を 1 つのオブジェクトにする
-
-  ```js
-  {
-    "title": "2026年10月7日の更新",
-    "author": "Claude Platform リリースノート",
-    "text": "1 つ目の項目。\n2 つ目の項目。"
-  }
-  ```
-
-- CHANGELOG は 1 版を 1 つのオブジェクトにし、`title` を
-  `"Claude Code 2.1.293（日本語）"`、`author` を `"Claude Code CHANGELOG"` にする。
-  履歴は `title` を保存するので、英語版と見分けられるよう「（日本語）」を付ける
-- `text` は項目ごとに `\n` で区切る。項目の中では改行しない
+- `title` は `notes.py` が付ける。CHANGELOG の「（日本語）」は、履歴が `title` を
+  保存するので英語版と見分けるためのもの
+- 項目の中では改行しない
 - Markdown の記法は残さない。リンクは表示の文字だけにし、`**` や
   バッククォートは外す（`claude-haiku-5-5` のような識別子そのものは残す）
 - 自然な日本語の「です・ます」調にする。モデル名、API・パラメーター名、
@@ -75,17 +53,22 @@ CHANGELOG:
 - 練習文として打つので、`<` `>` `{` `}` のような打ちにくい記号は、
   原文にあるときだけ残す（足さない）
 
-## 4. 書き換える
+## 3. 書き換える
 
-- `index.html` の `const CLAUDE_NOTES = [` から対応する `];` までを
-  置き換える。CHANGELOG は `const CLAUDE_CODE_JA = [` から対応する `];` まで
-- その上のコメント `（YYYY-MM-DD 時点の内容…）` を、取得した日に直す
-- ほかの箇所は変えない
+```bash
+.claude/skills/update-release-notes/notes.py apply <作業用.json>
+```
 
-## 5. 確かめる
+`CLAUDE_NOTES` / `CLAUDE_CODE_JA` と、変わった側の上のコメントの日付を書き換え、
+`last-source.json` を今回の英語にする。`ja` の数が `en` と合わないと、何も書かずに止まる。
 
-`python3 -m http.server 8080` で配信し、`node` から Playwright で
-`http://localhost:8080/` を開く。
+## 4. 確かめる
+
+```bash
+.claude/skills/update-release-notes/notes.py check
+```
+
+空いているポートで配信し、`node` から Playwright で次を確かめる。`OK` と出れば済み。
 
 - コンソールにエラーが無い
 - 練習文の選択欄に「・YYYY年M月D日の更新」が 3 つ並ぶ
@@ -94,12 +77,12 @@ CHANGELOG:
 - 「Claudeニュースまとめ」を選ぶと、3 日分が `【タイトル】本文` の形で出る
   （CHANGELOG は含まない）
 
-## 6. コミットする
+## 5. コミットする
 
 ```
 chore(news): リリースノートと CHANGELOG の訳を YYYY-MM-DD 時点に更新する
 ```
 
-片方だけ更新したときは「リリースノートを…」「CHANGELOG の訳を…」とする。
+`last-source.json` も一緒にコミットする。片方だけ更新したときは「リリースノートを…」「CHANGELOG の訳を…」とする。
 
 push は利用者が行う。
