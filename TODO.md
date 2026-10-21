@@ -16,7 +16,8 @@
 - [ ] 送る前に Markdown のリンク・`**` を外す。バッククォートの中の識別子は訳されないように保護し、訳文ではバッククォートを外す
 - [ ] 失敗したら（通信エラー・制限・応答の形が違う）何も書かずにエラーで止める
 - [ ] skill の手順に、訳し方を 2 通り書く。既定は今までどおり Claude が訳し、`translate` は必要なときだけ使う
-- [ ] skill の引数で切り替えられるようにする。`/update-release-notes google` なら `translate` を使い、引数が無ければ Claude が訳す
+- [ ] スクリプトだけで通せるようにする。`notes.py run --google WORK.json` で fetch → translate → apply → check を続けて行う（Claude を介さない。`~/bin/update-release-notes run --google …` でも呼べる）。`--google` が無ければ、fetch の後で止めて Claude の訳を待つ
+- [ ] skill の引数で切り替えられるようにする。`/update-release-notes google` なら `run --google` を使い、引数が無ければ Claude が訳す
 
 **無駄を省く工夫:**
 
