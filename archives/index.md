@@ -4,6 +4,7 @@
 作り直すので、手で直さない。やらないと決めたものは（対応しない）が付いている。
 進行中の項目は [TODO.md](../TODO.md) にある。
 
+- [TODO-032. update-release-notes を取得から確認までスクリプトで通す（訳は Claude ／ Google を選べる）](todo/TODO-032.%20update-release-notes%20%E3%82%92%E5%8F%96%E5%BE%97%E3%81%8B%E3%82%89%E7%A2%BA%E8%AA%8D%E3%81%BE%E3%81%A7%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%97%E3%83%88%E3%81%A7%E9%80%9A%E3%81%99%EF%BC%88%E8%A8%B3%E3%81%AF%20Claude%20%EF%BC%8F%20Google%20%E3%82%92%E9%81%B8%E3%81%B9%E3%82%8B%EF%BC%89.md)
 - [TODO-031. update-release-notes の機械的な手順をスクリプトにする](todo/TODO-031.%20update-release-notes%20%E3%81%AE%E6%A9%9F%E6%A2%B0%E7%9A%84%E3%81%AA%E6%89%8B%E9%A0%86%E3%82%92%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%97%E3%83%88%E3%81%AB%E3%81%99%E3%82%8B.md)
 - [TODO-030. よく誤る字を 5 個にする](todo/TODO-030.%20%E3%82%88%E3%81%8F%E8%AA%A4%E3%82%8B%E5%AD%97%E3%82%92%205%20%E5%80%8B%E3%81%AB%E3%81%99%E3%82%8B.md)
 - [TODO-029. 履歴の分析画面を見やすくする](todo/TODO-029.%20%E5%B1%A5%E6%AD%B4%E3%81%AE%E5%88%86%E6%9E%90%E7%94%BB%E9%9D%A2%E3%82%92%E8%A6%8B%E3%82%84%E3%81%99%E3%81%8F%E3%81%99%E3%82%8B.md)

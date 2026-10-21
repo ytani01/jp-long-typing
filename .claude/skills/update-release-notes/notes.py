@@ -1,16 +1,21 @@
 #!/usr/bin/env python3
-"""update-release-notes の取得・埋め込み・確認（TODO-031）。訳は Claude が書く。
+"""update-release-notes の取得・訳・埋め込み・確認（TODO-031、TODO-032）。
 
-  notes.py fetch WORK.json   新しい 3 日分・3 版を取得して WORK.json に書く
-  notes.py apply WORK.json   WORK.json の訳を index.html に埋め込む
-  notes.py check             index.html を配信して Playwright で確かめる
+  notes.py run [--by claude|google] WORK.json        fetch → translate → apply → check を続けて行う
+  notes.py fetch WORK.json                           新しい 3 日分・3 版を取得して WORK.json に書く
+  notes.py translate [--by claude|google] WORK.json  changed / new の en を訳して ja に書く（既定は claude）
+  notes.py apply WORK.json                           WORK.json の訳を index.html に埋め込む
+  notes.py check                                     index.html を配信して Playwright で確かめる
 """
+import argparse
 import datetime
 import json
 import re
 import socket
 import subprocess
+import tempfile
 import time
+import urllib.parse
 import sys
 from pathlib import Path
 
@@ -25,6 +30,16 @@ AUTHORS = {'notes': 'Claude Platform リリースノート', 'code': 'Claude Cod
 ITEM = re.compile(r'^[*-] (.*)')
 MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
           'August', 'September', 'October', 'November', 'December']
+# 非公式の口。translate.googleapis.com（client=gtx）は 429 で止められた（TODO-032）
+GOOGLE_URL = 'https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=en&tl=ja&'
+RULES = """\
+- en の 1 項目を ja の 1 要素にし、数と並びを揃える
+- 項目の中では改行しない
+- Markdown の記法は残さない。リンクは表示の文字だけにし、** やバッククォートは外す（claude-haiku-5-5 のような識別子そのものは残す）
+- 自然な日本語の「です・ます」調にする。モデル名、API・パラメーター名、エラーコード、製品名（Claude Managed Agents など）は訳さない
+- 価格の $0.10 USD のような書き方は原文のまま残す
+- 練習文として打つので、< > { } のような打ちにくい記号は、原文にあるときだけ残す（足さない）
+"""
 DATE = re.compile(r'(%s) (\d{1,2})(?:st|nd|rd|th)?, (\d{4})$' % '|'.join(MONTHS))
 
 
@@ -99,7 +114,68 @@ def fetch(work):
         if [e['title'] for e in entries] == list(cur) and all(e['status'] == 'same' for e in entries):
             print(f'{CONSTS[kind]}: 変更なし')
     Path(work).write_text(json.dumps(out, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-    print(f'訳すもの: {todo} 件 → {work} の "ja" に 1 項目 1 要素で書く' if todo else '変更なし')
+    print(f'訳すもの: {todo} 件 → {work}' if todo else '変更なし')
+    return todo
+
+
+def unmd(s):
+    """Markdown のリンクを表示の文字だけにし、** を外す。"""
+    return re.sub(r'\[([^\]]*)\]\([^)]*\)', r'\1', s).replace('**', '')
+
+
+def plain(s):
+    return unmd(s).replace('`', '')
+
+
+def by_google(entries):
+    out = []
+    for e in entries:
+        # バッククォートは残して送る（中の識別子が訳されない）
+        q = '&'.join('q=' + urllib.parse.quote(unmd(s)) for s in e['en'])
+        try:
+            ja = json.loads(get(GOOGLE_URL + q))
+        except (subprocess.CalledProcessError, json.JSONDecodeError) as x:
+            sys.exit(f"Google 翻訳に失敗した（{e['title']}）: {x}")
+        out.append(ja)
+    return out
+
+
+def by_claude(entries):
+    prompt = ('次の JSON の各要素の en（英語の項目の並び）を日本語に訳してください。'
+              'タイピング練習の文として使います。訳し方の決まり:\n' + RULES +
+              '\n要素ごとに訳の文字列の配列を作り、その配列の配列（JSON）だけを出力してください。'
+              '前置きやコードブロックは付けないでください。ツールは使わないでください。\n\n'
+              + json.dumps([{'title': e['title'], 'en': e['en']} for e in entries], ensure_ascii=False, indent=1))
+    # プロジェクトの CLAUDE.md やフックを読み込ませないよう、空のディレクトリで起動する
+    with tempfile.TemporaryDirectory() as d:
+        r = subprocess.run(['claude', '-p', prompt], capture_output=True, text=True, cwd=d, timeout=900)
+    if r.returncode:
+        sys.exit(f'claude -p に失敗した: {r.stderr.strip() or r.stdout.strip()}')
+    out = r.stdout.strip()
+    try:
+        return json.loads(out[out.index('['):out.rindex(']') + 1])
+    except ValueError:
+        sys.exit(f'claude -p の応答が JSON として読めない: {out[:300]}')
+
+
+def translate(work, by):
+    data = json.loads(Path(work).read_text(encoding='utf-8'))
+    entries = [e for k in CONSTS for e in data[k] if e['status'] != 'same']
+    if not entries:
+        print('訳すものは無い')
+        return
+    print(f'{len(entries)} 件を {by} で訳す')
+    res = by_google(entries) if by == 'google' else by_claude(entries)
+    # 1 つでも数が合わなければ、何も書かずに止める
+    ok = isinstance(res, list) and len(res) == len(entries) and all(
+        isinstance(ja, list) and len(ja) == len(e['en']) and all(isinstance(s, str) and s.strip() for s in ja)
+        for e, ja in zip(entries, res))
+    if not ok:
+        sys.exit(f'訳の形が違う（数が英語と合わない、空や文字列でないものがある）: {str(res)[:300]}')
+    for e, ja in zip(entries, res):
+        e['ja'] = [' '.join(plain(s).split()) for s in ja]
+    Path(work).write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+    print(f'{work} に訳を書いた')
 
 
 def dump(entries):
@@ -195,12 +271,23 @@ def check():
 
 
 if __name__ == '__main__':
-    cmd = sys.argv[1:2]
-    if cmd == ['fetch'] and len(sys.argv) == 3:
-        fetch(sys.argv[2])
-    elif cmd == ['apply'] and len(sys.argv) == 3:
-        apply(sys.argv[2])
-    elif cmd == ['check'] and len(sys.argv) == 2:
-        check()
+    ap = argparse.ArgumentParser(usage=__doc__)
+    ap.add_argument('cmd', choices=['run', 'fetch', 'translate', 'apply', 'check'])
+    ap.add_argument('--by', choices=['claude', 'google'], default='claude')
+    ap.add_argument('work', nargs='?')
+    a = ap.parse_args()
+    if (a.work is None) != (a.cmd == 'check'):
+        ap.error('check 以外は WORK.json を 1 つ渡す' if a.work is None else 'check は WORK.json を取らない')
+    if a.cmd == 'run':
+        if fetch(a.work):
+            translate(a.work, a.by)
+            apply(a.work)
+            check()
+    elif a.cmd == 'translate':
+        translate(a.work, a.by)
+    elif a.cmd == 'fetch':
+        fetch(a.work)
+    elif a.cmd == 'apply':
+        apply(a.work)
     else:
-        sys.exit(__doc__)
+        check()
