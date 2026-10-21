@@ -944,41 +944,41 @@
        ======================================================== */
     const CLAUDE_CODE_URL = 'https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md';
 
-    // update-release-notes skill が書き換える（2026-10-10 時点の内容）
+    // update-release-notes skill が書き換える（2026-10-21 時点の内容）
     const CLAUDE_NOTES = [
       {
-        "title": "2026年10月9日の更新",
+        "title": "2026年10月20日の更新",
         "author": "Claude Platform リリースノート",
-        "text": "Claude Managed Agentsのエージェントに、dynamic workflowsを使わせられるようになりました。managed-agents-2026-04-01のベータヘッダーで使えるベータ版です。数百件の文書のレビューのように多くの部分からなる作業では、エージェントがワークフローを書けます。ワークフローは、多くのエージェントを段階に分けて動かし、その結果をまとめるプログラムです。サーバーはそれをワークフローランとしてバックグラウンドで実行します。dynamic workflowsを有効にするには、エージェントのmultiagentフィールドを{\"type\": \"multiagent_20261001\", \"workflows\": {\"type\": \"enabled\"}}にしてください。エージェントを導くには、いつランを始めるかをシステムプロンプトで伝えてください。各ランは、セッションのイベントストリームのworkflow_run.*イベントで追えます。Workflow runsを参照してください。"
+        "text": "Claude Enterprise の組織向けに、Inference hooks のベータが終わりました。\nuser profiles を公開しました。API リクエストごとに、どのエンドユーザーのためのものかを Anthropic に伝えられます。プラットフォームやゲートウェイを運営している場合や、API へのアクセスを再販している場合に、安全のための措置を組織全体ではなく 1 人のエンドユーザーだけに適用できるようになります。SDK と ant CLI は新しい /v1/user_profiles エンドポイントに対応しています。\nAdmin API に organization webhooks を追加しました。webhooks-2026-10-07 のベータヘッダーで使えるベータ版です。/v1/organizations/webhooks エンドポイントで、2 種類のイベントの Webhook エンドポイントを登録できます。1 つは Anthropic が組織の user profile を制限または禁止したとき、もう 1 つはその制限や禁止が解けたときです。利用を申し込むには、Anthropic のアカウントチームに連絡してください。"
       },
       {
-        "title": "2026年10月8日の更新",
+        "title": "2026年10月15日の更新",
         "author": "Claude Platform リリースノート",
-        "text": "Compliance APIのチャットのエンドポイントが、統合されたClaudeのチャットも返すようになりました。Claude Enterpriseの組織向けのベータ版で、今のCompliance Access Keyのまま使えます。チャット、ファイル、プロジェクトの取得と削除を参照してください。"
+        "text": "Models API に capabilities.thinking.types.between_tools を追加しました。GET /v1/models と GET /v1/models/{model_id} で、各モデルが thinking: {type: \"between_tools\"} を受け付けるかが分かるようになりました。これは最初の thinking を無効にする設定です。詳しくは Using the Models API をご覧ください。\nCompliance API で、組織の各メンバーが claude.ai の Instructions for Claude と Cowork の Global instructions に保存した文章を取得できるようになりました。Claude Enterprise の組織向けのベータ版です。既存の Compliance Access Key と read:compliance_user_data のスコープで GET /v1/compliance/organizations/{org_uuid}/user_preferences を呼び出します。詳しくは List user preferences をご覧ください。\nClaude Opus 5.5 の Fast mode がリサーチプレビューを終え、利用の申し込みが要らなくなりました。Claude Opus 5.5 へのリクエストに fast-mode-2026-02-01 のベータヘッダーは不要になり、付けたままのリクエストも引き続き動きます。Claude Opus 5.5 には、Start、Build、Scale の各利用ティアで Fast mode の既定のレート制限が設けられました。Claude Opus 5 と Claude Opus 4.8 の Fast mode はリサーチプレビューのままなので、これらのモデルへの Fast mode のリクエストには引き続きベータヘッダーを付けてください。\nClaude Opus 5.5 の Fast mode が、Claude in Microsoft Foundry の Azure でホストされるデプロイで使えるようになりました。"
       },
       {
-        "title": "2026年10月7日の更新",
+        "title": "2026年10月14日の更新",
         "author": "Claude Platform リリースノート",
-        "text": "Claude Sonnet 5.5のプロンプトキャッシュの読み取り料金を、100万トークンあたり$0.20 USDから$0.10 USDに値下げしました。基本の入力料金の0.1倍から0.05倍になります。キャッシュの書き込みとその他の料金は変わりません。プロンプトキャッシュの料金を参照してください。\nClaude Haiku 5.5（claude-haiku-5-5）をリリースしました。大量の処理や応答の速さが求められる作業向けに調整した、最も高性能なモデルです。100万トークンのコンテキストウィンドウ、最大128kトークンの出力、effortパラメーター付きのadaptive thinkingを備えています。Claude API、Claude in Amazon Bedrock、Claude Platform on AWS、Claude on Google Cloud、Claude in Microsoft Foundryで利用できます。Claude Haiku 5.5の新機能を参照してください。\nClaude Haiku 4.5向けに書かれたコードは、Claude Haiku 5.5では動かなくなることがあります。手動のextended thinking（budget_tokens）、サンプリングのパラメーターtemperature、top_p、top_k、アシスタントメッセージのプリフィルは、それぞれ400エラーを返すことがあります。computer_20250124も400エラーを返します。Claude APIとGoogle Cloudではcomputer_toolset_20260801のツールセットを、Amazon Bedrockではcomputer_20251124を使ってください。system、tools、それ以前のターンを変えた後にthinkingブロックを送り返すリクエストも、400エラーを返すことがあります。Amazon Bedrockでは、Claude Haiku 5.5で構造化出力を使えません。adaptive thinkingが既定で有効なので、応答がthinkingブロックから始まることがあり、thinking.displayを\"summarized\"にしない限り、その文章は省かれます。同じ文章でもトークン数が多く数えられます。それぞれの変更は移行ガイドを参照してください。モデル固有のプロンプトのパターンは、Claude Haiku 5.5へのプロンプトを参照してください。\nPythonとTypeScriptのSDKに、browser useツールとcomputer useツールのクラスがベータ版で加わりました。クラスを継承し、自分のブラウザーやデスクトップの自動化に合わせてツールごとにメソッドを1つ書きます。ツールのループ、ブラウザーに設定したURLとファイルのポリシー、承認のコールバックはSDKが実行します。SDKのツールセットによるbrowser useとcomputer useを参照してください。\nClaudeのMaxプランとTeamプランに、毎月のAPIクレジットが含まれるようになりました。受け取り方は、MaxプランとTeamプランのAPIクレジットを参照してください。\nClaude Managed Agentsで、limitedネットワークのクラウド環境が、allowed_hostsをweb_searchツールとweb_fetchツールにも適用するようになりました。allowed_hostsに合わないホストのURLをweb_fetchで呼ぶと、エージェントにurl_not_allowedのエラー結果が返ります。web_searchは、そのようなホストの結果を除きます。allowed_hostsにホストが1つも無いときは、どちらのツールもページや検索結果を返しません。allow_package_managersとallow_mcp_serversは、これらのツールにホストを足しません。ツールからホストに届くようにするには、そのホストをallowed_hostsに足してください。サンドボックスからも届くようになります。unrestrictedネットワークとセルフホストの環境では、これらのツールは制限されません。環境のネットワークを参照してください。\nlimitedネットワークでは、有効なウェブツールのallowed_domainsにallowed_hostsに含まれない項目があると、セッションの作成が400エラーで失敗します。そのような項目を足すセッションの更新も同じです。allowed_hostsの項目は、*.で始まらない限り1つのホストにだけ一致するので、docs.example.comは[\"example.com\"]に含まれません。エラーを直すには、そのホストをallowed_hostsに足すか、allowed_domainsからその項目を外してください。web searchとweb fetchのドメインを制限するを参照してください。\nClaude Managed Agentsで、web_fetchツールが、セッションにすでに現れたURLだけを取得するようになりました。たとえば、ユーザーのメッセージの本文、web_searchの結果、web_fetchが以前に返したページに現れたURLです。データの持ち出しのリスクを減らします。Claude自身の出力、エージェントのシステムプロンプト、添付の文書、bash、read、MCPツールなどのツールの出力にだけ現れたURLは数えません。そのURLをweb_fetchで呼ぶと、エージェントにurl_not_in_prior_contextのエラー結果が返ります。エージェントにURLを取得させるには、user.messageイベントの本文でそのURLを送ってください。"
+        "text": "OpenTelemetry export をベータ版として公開しました。Messages API のリクエストと Claude Managed Agents のセッションを、お使いのオブザーバビリティのバックエンドでトレースできます。Claude SDK は Python、TypeScript、C#、Go、Java、PHP、Ruby でスパンを出力します。API からスパンを受け取るには、Claude Console で OpenTelemetry の送信先を追加してください。\nClaude Managed Agents の scheduled deployments が、Claude Platform on AWS で使えるようになりました。"
       }
     ];
 
-    // update-release-notes skill が書き換える（2026-10-10 時点の内容。最新 3 版の先頭 8 項目の訳。TODO-020）
+    // update-release-notes skill が書き換える（2026-10-21 時点の内容。最新 3 版の先頭 8 項目の訳。TODO-020）
     const CLAUDE_CODE_JA = [
       {
-        "title": "Claude Code 2.1.296（日本語）",
+        "title": "Claude Code 2.1.306（日本語）",
         "author": "Claude Code CHANGELOG",
-        "text": "Claude apps gatewayのmanaged.policies[]にcodeキーを追加しました。cliと同じ設定を、Claude DesktopのCodeタブにも適用します。desktopと並べると、Claude Desktopのゲートウェイモードが有効になります。\nサブエージェントのフロントマターと--agentsの定義にautoCompactWindowを追加しました。サブエージェントが、メインの会話のウィンドウより早く自動で圧縮できます。\nCLAUDE_CODE_WORKFLOW_SUBAGENT_MODELを追加しました。ほかのサブエージェントのモデルはそのままで、ワークフローのエージェントをすべて1つのモデルで動かせます。\n環境変数CLAUDE_CODE_OVERLOADED_RETRY_MAX_DELAY_MSを追加しました。過負荷（529）のリクエストを再試行するときの、バックオフの最大の待ち時間を長く設定できます。\n有効なほかのプラグインと名前が同じためにフックが外されたプラグインについて、/pluginに注記を出すようにしました。\nReadツールにallow_largeオプションを追加しました。ファイル全体が必要でコンテキストに余裕があるとき、Claudeが通常のサイズの上限を超えるテキストファイルを1回で読めます。\n\"continue\": falseでツールの呼び出しを拒否するマネージド設定のPreToolUseフックと、呼び出しをブロックするマネージドのpromptフックが、呼び出しを拒否してもターンを終わらせない問題を直しました。\nマネージド設定のPostToolUseフックが、一部のセッションでupdatedMCPToolOutputを適用しない問題を直しました。"
+        "text": "クラウドセッションの中で、セッションの環境変数なしに claude -p を起動すると「Not logged in」と出る問題を修正しました。\nMCP のツールが多いセッションで、API のエラーが「prompt is too long」に置き換わり、不要なコンパクションが起きる問題を修正しました。"
       },
       {
-        "title": "Claude Code 2.1.295（日本語）",
+        "title": "Claude Code 2.1.305（日本語）",
         "author": "Claude Code CHANGELOG",
-        "text": "コマンドフックとHTTPフックにonFailure: \"block\"を追加しました。起動できない、タイムアウトした、想定外のコードで終了したフックは、操作を通さずにブロックします。\nProgram Status Protocol（OSC 7501）に対応しました。これを実装した端末では、Claude Codeが作業中か、入力を待っているか、終わったかを表示できます。\n/copyの選択欄に引用の文章を追加しました。下書きしたメッセージを、>の記号を付けずにコピーできます。\nclaude plugin install、enable、disable、marketplace addで、書き込む先の設定ファイルが読み込まれないときに警告を出すようにしました。\nclaude -pの実行が最後のターンの後も終わらないとき、何を待っているかを標準エラー出力に1行表示するようにしました（端末のときだけ）。\nClaude apps gatewayのBedrock、Vertex、Foundryなどのクラウドのアップストリームで、timeouts.upstream_ttfb_msに対応しました。設定した値で、ストリームが始まるまでの時間を制限し、超えるとフェイルオーバーするか502を返します。\n←で今のツールが終わるのを待っている間にターンを止めたとき、「Backgrounding cancelled」のメッセージを出すようにしました。\nClaude apps gatewayのすべてのアップストリームに、省略できるmodelsの一覧を追加しました。一覧にあるモデルだけを、フェイルオーバーのときも含めてそこへ送ります。項目の中の*は1つだけワイルドカードとして使えます。"
+        "text": "sandbox.allowNestedUserNamespaces を追加しました。Linux でサンドボックス内のコマンドが user namespace を作れるようになります（Chromium、rootless の podman）。ただし、これによりサンドボックスのファイル保護を回避できるようになります。\nCLAUDE_CODE_RETRY_WATCHDOG_USAGE_LIMIT_RECHECK_MS を追加しました。無人のリトライモード（CLAUDE_CODE_RETRY_WATCHDOG）が、リセット前に解除された利用上限に気づけるようになります。\nVertex、Bedrock などのプロバイダーで、エンドポイントやゲートウェイが tool search を拒否するとき、また ToolSearch が禁止されているか --tools から外されているゲートウェイの後ろで、すべてのリクエストが失敗する問題を修正しました（2.1.304 でのリグレッション）。Claude Code はこれを使わずにリトライするようになりました。\nモデル名が modelOverrides の値と大文字小文字や [1m] のタグだけ違うとき、/effort と /autocompact の設定が効かない問題を修正しました。\nbare リポジトリの新しい worktree が、既定のブランチではなくローカルの HEAD から始まることがある問題と、変更の無いサブエージェントの worktree が片付けられないことがある問題を修正しました。\nディスクがいっぱいのとき、Bash のコマンドが ENOSPC とファイルパスだけを出して失敗する問題を修正しました。ディスクがいっぱいで何も実行していないことを伝えるようになりました。\nクラウドセッションや SDK の setMcpServers で渡した MCP サーバーが、セッションの途中で自分の設定にある同じ名前のサーバーに置き換わる問題を修正しました。\nサブエージェントがフォールバックのモデルに切り替わった後、Claude がそのサブエージェントの作業のモデル名を間違えて示す問題を修正しました。"
       },
       {
-        "title": "Claude Code 2.1.294（日本語）",
+        "title": "Claude Code 2.1.304（日本語）",
         "author": "Claude Code CHANGELOG",
-        "text": "「〜するコマンドをブロックする」のような指示の形で書いたpromptフックとagentフックが、ブロックすべきものを許してしまう問題を直しました。\nStopとSubagentStopの、「ビルドが壊れていたら続ける」のような指示の形で書いたpromptフックの判定を改善しました。Claudeが早く止まりにくくなります。"
+        "text": "先に動くプラグインが Mod のフックを飛ばしたとき、トランスクリプトにイベントとプラグインの名前を示す行を出すようにしました。\nMod の tool.check の答えに decider: \"person\" を追加しました。確認を承認できるのは許可のダイアログかホストのコールバックだけになり、尋ねる相手がいない場面では Mod の理由を添えて拒否されます。\nMod の tool.check のイベントに e.isReadOnly を追加しました。ツールの呼び出しが読み取り専用のときに設定されます。\n/auto-mode-setup を追加しました。プロジェクトと最近のセッションを読んで auto mode に環境を教える、手順に沿ったセットアップです。Bedrock、Vertex、Foundry、Claude apps gateway、テレメトリーを無効にしたセッションでも使えるようになりました。\n/claude-api managed-agents-secure を追加しました。Managed Agents のエージェントの設定を、Anthropic が公開しているセキュリティガイドと比べます。何も変更はしません。\nトランスクリプトの表示（Ctrl+O）で、コンパクションの要約にそれまでに呼んだツールの名前を出すようにしました。\nPro と Max のプランで、しばらく使っていない会話を再開すると 5 時間の利用上限のうち目立つ量を使うとき、警告を出すようにしました。そのまま再開するか、新しい会話を始めるかを選べます。新しい会話で前の会話に触れれば、Claude がそれを探します。\n起動時に ANTHROPIC_API_KEY を承認した後や、/config で「Use custom API key」を切り替えた後、1 時間ごとの確認まで組織のポリシーが更新されない問題を修正しました。"
       }
     ];
 
