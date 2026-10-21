@@ -21,7 +21,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 INDEX = ROOT / 'index.html'
-LAST = Path(__file__).with_name('last-source.json')
+LAST = Path(__file__).resolve().with_name('last-source.json')
 NOTES_URL = 'https://platform.claude.com/docs/en/release-notes/overview.md'
 CODE_URL = 'https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md'
 PLAYWRIGHT = '/home/ytani/.local/lib/playwright/node_modules/playwright/index.mjs'
