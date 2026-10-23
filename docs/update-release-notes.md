@@ -22,6 +22,22 @@ ln -s ~/work/jp-long-typing/.claude/skills/update-release-notes/notes.py ~/bin/u
 
 ## 使い方
 
+いつもの更新は、リポジトリ直下の `update-notes.sh` で済む。`run` を流し、
+変わっていたら `index.html` と `last-source.json` を「終わったら」のメッセージで commit して push する。
+「変更なし」や `check` の失敗のときは commit しない。
+
+- 始める前に `index.html` か `last-source.json` に commit していない変更があると、何もせずに止まる。
+  `check` が落ちた後に流し直すときも、先に「失敗したとき」の手順で戻す
+- push は `git push` をそのまま流すので、ほかに push していない commit があれば一緒に送られる。
+  push だけ落ちたときは、流し直さずに `git push` を手で流す（流し直すと「変更なし」で終わり、push されない）
+
+```bash
+./update-notes.sh          # claude で訳す
+./update-notes.sh google   # Google 翻訳で訳す
+```
+
+1 段ずつ流すときや、commit の前に中身を見たいときは `notes.py` を直接使う。
+
 ```bash
 notes.py run [--by claude|google] 作業用.json
 ```
@@ -57,7 +73,7 @@ flowchart LR
 
 ### check で確かめること
 
-- コンソールにエラーが無い
+- コンソールにエラーが無い（api.rss2json.com のエラーは数えない。NHK ニュースの取得の失敗で、内蔵のニュースで動く）
 - 練習文の選択欄に「・YYYY年M月D日の更新」が 3 つ並ぶ
 - 「・Claude Code 2.1.xxx（英語）」の後に「・Claude Code 2.1.xxx（日本語）」が 3 つ並び、選ぶと訳が出る
 - 「Claudeニュースまとめ」を選ぶと、3 日分が `【タイトル】本文` の形で出る（CHANGELOG は含まない）
@@ -67,7 +83,6 @@ flowchart LR
 どの段も、失敗すると何も書かずにエラーで止まる。
 
 - `fetch` が「3 つ読めない」で止まる: 元の Markdown の書式が変わった可能性がある
-- `check` が「コンソールのエラー」で api.rss2json.com の CORS エラーだけを出して落ちる: NHK ニュースの取得の失敗で、内蔵のニュースで動くので表示には問題ない
 - `translate` が止まる: 通信エラー、Google の制限、訳の数が英語と合わない、など。`--by` を変えて流し直してよい
 - `run` で `check` が落ちたときは、`apply` が書いた `index.html` と `last-source.json` が残る。
   やり直すなら戻してから流す（戻さないと次の `run` は「変更なし」で終わる）

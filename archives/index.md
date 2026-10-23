@@ -4,6 +4,7 @@
 作り直すので、手で直さない。やらないと決めたものは（対応しない）が付いている。
 進行中の項目は [TODO.md](../TODO.md) にある。
 
+- [TODO-034. リリースノートの更新を 1 コマンドで commit・push まで通す](todo/TODO-034.%20%E3%83%AA%E3%83%AA%E3%83%BC%E3%82%B9%E3%83%8E%E3%83%BC%E3%83%88%E3%81%AE%E6%9B%B4%E6%96%B0%E3%82%92%201%20%E3%82%B3%E3%83%9E%E3%83%B3%E3%83%89%E3%81%A7%20commit%E3%83%BBpush%20%E3%81%BE%E3%81%A7%E9%80%9A%E3%81%99.md)
 - [TODO-033. リリースノート更新スクリプトの使い方を文書にする](todo/TODO-033.%20%E3%83%AA%E3%83%AA%E3%83%BC%E3%82%B9%E3%83%8E%E3%83%BC%E3%83%88%E6%9B%B4%E6%96%B0%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%97%E3%83%88%E3%81%AE%E4%BD%BF%E3%81%84%E6%96%B9%E3%82%92%E6%96%87%E6%9B%B8%E3%81%AB%E3%81%99%E3%82%8B.md)
 - [TODO-032. update-release-notes を取得から確認までスクリプトで通す（訳は Claude ／ Google を選べる）](todo/TODO-032.%20update-release-notes%20%E3%82%92%E5%8F%96%E5%BE%97%E3%81%8B%E3%82%89%E7%A2%BA%E8%AA%8D%E3%81%BE%E3%81%A7%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%97%E3%83%88%E3%81%A7%E9%80%9A%E3%81%99%EF%BC%88%E8%A8%B3%E3%81%AF%20Claude%20%EF%BC%8F%20Google%20%E3%82%92%E9%81%B8%E3%81%B9%E3%82%8B%EF%BC%89.md)
 - [TODO-031. update-release-notes の機械的な手順をスクリプトにする](todo/TODO-031.%20update-release-notes%20%E3%81%AE%E6%A9%9F%E6%A2%B0%E7%9A%84%E3%81%AA%E6%89%8B%E9%A0%86%E3%82%92%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%97%E3%83%88%E3%81%AB%E3%81%99%E3%82%8B.md)

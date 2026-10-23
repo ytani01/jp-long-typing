@@ -221,7 +221,9 @@ const [url, notes, code] = [process.argv[1], JSON.parse(process.argv[2]), JSON.p
 const strip = s => s.replace(/\s/g, '');
 const fails = [], errs = [];
 const b = await chromium.launch(); const p = await b.newPage();
-p.on('console', m => m.type() === 'error' && errs.push(m.text())); p.on('pageerror', e => errs.push(String(e)));
+// NHK ニュースの取得（api.rss2json.com）の失敗は、内蔵のニュースで動くので数えない（TODO-034）
+const nhk = m => [m.text(), m.location().url].some(s => s.includes('api.rss2json.com'));
+p.on('console', m => m.type() === 'error' && !nhk(m) && errs.push(m.text())); p.on('pageerror', e => errs.push(String(e)));
 await p.goto(url);
 await p.waitForFunction(() => document.querySelector('#preset-select option[value="claude-code"]'));
 const opts = await p.$$eval('#preset-select option', os => os.map(o => [o.value, o.textContent]));
