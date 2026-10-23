@@ -944,41 +944,41 @@
        ======================================================== */
     const CLAUDE_CODE_URL = 'https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md';
 
-    // update-release-notes skill が書き換える（2026-10-21 時点の内容）
+    // update-release-notes skill が書き換える（2026-10-23 時点の内容）
     const CLAUDE_NOTES = [
+      {
+        "title": "2026年10月22日の更新",
+        "author": "Claude Platform リリースノート",
+        "text": "Claude Models on Google Cloud (Anthropic managed) の提供を開始しました。Anthropic が運用し、お使いの Google Cloud プロジェクトから利用する Claude API です。アクセスは Google Cloud IAM で管理し、請求は Google Cloud Marketplace で行います。\nClaude Models on Google Cloud (Anthropic managed) の Claude Opus 5.5 で Fast mode を使えるようになりました。"
+      },
+      {
+        "title": "2026年10月21日の更新",
+        "author": "Claude Platform リリースノート",
+        "text": "API バージョン 2026-10-21 をリリースしました。アップグレードの方法は Migrating to API version 2026-10-21 で説明しています。\nAPI バージョン 2026-10-21 を既定で送る、新しいバージョンのクライアント SDK と ant CLI をリリースしました。Python SDK 2.0.0、TypeScript SDK 1.0.0、C# SDK 13.0.0、Go SDK 2.0.0、Java SDK 3.0.0、PHP SDK 1.0.0、Ruby SDK 2.0.0、ant CLI 2.0.0 です。詳しくは Switch to 2026-10-21 をご覧ください。\n新しい SDK と CLI には API バージョンによらない破壊的変更もあり、ライセンスも MIT License から Apache 2.0 に変わりました。詳しくは SDK and CLI changes をご覧ください。\nユーザープロファイルに enforcement_status と enforcement_actions のフィールドを追加しました。エンドカスタマーのいずれかを Anthropic が制限または禁止したかを確認できます。制限や禁止が続いているプロファイルを探すには、新しい enforcement_status[] フィルターを付けてプロファイルの一覧を取得します。詳しくは Check whether Anthropic has restricted or banned a profile をご覧ください。"
+      },
       {
         "title": "2026年10月20日の更新",
         "author": "Claude Platform リリースノート",
-        "text": "Claude Enterprise の組織向けに、Inference hooks のベータが終わりました。\nuser profiles を公開しました。API リクエストごとに、どのエンドユーザーのためのものかを Anthropic に伝えられます。プラットフォームやゲートウェイを運営している場合や、API へのアクセスを再販している場合に、安全のための措置を組織全体ではなく 1 人のエンドユーザーだけに適用できるようになります。SDK と ant CLI は新しい /v1/user_profiles エンドポイントに対応しています。\nAdmin API に organization webhooks を追加しました。webhooks-2026-10-07 のベータヘッダーで使えるベータ版です。/v1/organizations/webhooks エンドポイントで、2 種類のイベントの Webhook エンドポイントを登録できます。1 つは Anthropic が組織の user profile を制限または禁止したとき、もう 1 つはその制限や禁止が解けたときです。利用を申し込むには、Anthropic のアカウントチームに連絡してください。"
-      },
-      {
-        "title": "2026年10月15日の更新",
-        "author": "Claude Platform リリースノート",
-        "text": "Models API に capabilities.thinking.types.between_tools を追加しました。GET /v1/models と GET /v1/models/{model_id} で、各モデルが thinking: {type: \"between_tools\"} を受け付けるかが分かるようになりました。これは最初の thinking を無効にする設定です。詳しくは Using the Models API をご覧ください。\nCompliance API で、組織の各メンバーが claude.ai の Instructions for Claude と Cowork の Global instructions に保存した文章を取得できるようになりました。Claude Enterprise の組織向けのベータ版です。既存の Compliance Access Key と read:compliance_user_data のスコープで GET /v1/compliance/organizations/{org_uuid}/user_preferences を呼び出します。詳しくは List user preferences をご覧ください。\nClaude Opus 5.5 の Fast mode がリサーチプレビューを終え、利用の申し込みが要らなくなりました。Claude Opus 5.5 へのリクエストに fast-mode-2026-02-01 のベータヘッダーは不要になり、付けたままのリクエストも引き続き動きます。Claude Opus 5.5 には、Start、Build、Scale の各利用ティアで Fast mode の既定のレート制限が設けられました。Claude Opus 5 と Claude Opus 4.8 の Fast mode はリサーチプレビューのままなので、これらのモデルへの Fast mode のリクエストには引き続きベータヘッダーを付けてください。\nClaude Opus 5.5 の Fast mode が、Claude in Microsoft Foundry の Azure でホストされるデプロイで使えるようになりました。"
-      },
-      {
-        "title": "2026年10月14日の更新",
-        "author": "Claude Platform リリースノート",
-        "text": "OpenTelemetry export をベータ版として公開しました。Messages API のリクエストと Claude Managed Agents のセッションを、お使いのオブザーバビリティのバックエンドでトレースできます。Claude SDK は Python、TypeScript、C#、Go、Java、PHP、Ruby でスパンを出力します。API からスパンを受け取るには、Claude Console で OpenTelemetry の送信先を追加してください。\nClaude Managed Agents の scheduled deployments が、Claude Platform on AWS で使えるようになりました。"
+        "text": "Claude Enterprise の組織向けに、Inference hooks がベータを終了しました。\nユーザープロファイルの提供を開始しました。各 API リクエストがどのエンドカスタマーのものかを Anthropic に伝えられます。プラットフォームやゲートウェイを運営している場合や、API アクセスを再販している場合に、安全上の措置を組織全体ではなく 1 社のエンドカスタマーだけに適用できるようになります。SDK と ant CLI は新しい /v1/user_profiles エンドポイントに対応しています。\nAdmin API に組織の Webhook をベータとして追加しました。webhooks-2026-10-07 のベータヘッダーで使えます。/v1/organizations/webhooks エンドポイントでは、2 種類のイベントの Webhook エンドポイントを登録できます。Anthropic が組織のユーザープロファイルを制限または禁止したときのものと、その制限や禁止が解除されたときのものです。利用を希望する場合は、Anthropic のアカウントチームにご連絡ください。\n組織の管理者は、Claude Console の Capabilities ページで組織の web fetch をオフにできるようになりました。web fetch がオフのときは、web fetch ツールを含む Messages API のリクエストが 400 エラーで失敗します。Claude Managed Agents のセッションでは、代わりに web_fetch の呼び出しがエージェントにエラーの結果を返します。web fetch がオンのときは、同じページで web fetch の許可するドメインやブロックするドメインも設定できます。詳しくは How to use web fetch と Domain filtering をご覧ください。\nClaude Managed Agents の web_fetch ツールが、Claude Console の Capabilities ページで設定した組織の web fetch のドメイン制限に従うようになりました。URL は、リダイレクトでたどり着いたものも含めて、組織のリストと、エージェントの web_fetch ツールにある allowed_domains または blocked_domains のリストの両方を通る必要があります。詳しくは Restrict web search and web fetch domains をご覧ください。\nClaude Managed Agents のセッションは、Claude Console の Capabilities ページにある組織の web search の設定に従います。Allow web search の設定には 10 月 6 日から、web search のドメイン制限には 10 月 14 日から従っています。エージェントが受け取るのは、組織のドメイン制限と、エージェントの web_search ツールにある allowed_domains または blocked_domains のリストの両方が許可した検索結果だけです。詳しくは Restrict web search and web fetch domains をご覧ください。"
       }
     ];
 
-    // update-release-notes skill が書き換える（2026-10-21 時点の内容。最新 3 版の先頭 8 項目の訳。TODO-020）
+    // update-release-notes skill が書き換える（2026-10-23 時点の内容。最新 3 版の先頭 8 項目の訳。TODO-020）
     const CLAUDE_CODE_JA = [
       {
-        "title": "Claude Code 2.1.306（日本語）",
+        "title": "Claude Code 2.1.309（日本語）",
         "author": "Claude Code CHANGELOG",
-        "text": "クラウドセッションの中で、セッションの環境変数なしに claude -p を起動すると「Not logged in」と出る問題を修正しました。\nMCP のツールが多いセッションで、API のエラーが「prompt is too long」に置き換わり、不要なコンパクションが起きる問題を修正しました。"
+        "text": "macOS と Linux でサンドボックス内の Bash コマンドを実行するとき、各コマンドの前にシェルの起動ファイルがサンドボックスの外で実行されていた問題を修正しました。\nmacOS のサンドボックスで、パターンのフォルダーにシンボリックリンク経由でたどり着く場合に、denyWrite の glob パターンがパスの実際の場所に適用されなかった問題を修正しました。\nサンドボックス内のコマンドや自動で承認された編集が、--mcp-config で渡した MCP の設定ファイルを変更できてしまう問題を修正しました。\nprint と SDK のセッションで、無効にした MCP サーバーが後の許可の確認によって再接続されてしまう問題を修正しました。\nリダイレクト先を開けずに失敗することがあるコマンドで設定された変数を、Bash の許可チェックが信頼してしまう問題を修正しました。\ncd を別のコマンドで包んだり前に何かを付けたりしてディレクトリを移動してから git を実行する複合コマンドの一部で、単純な cd のときのように Bash の許可チェックが確認を出さなかった問題を修正しました。\nサブシェルも含む一部のコマンドで、Edit(path) の拒否ルールがそのパスへの Bash のリダイレクトを防げなかった問題を修正しました。\nworktree で分離したセッションが、分離のガードで拒否すべき、ロケールを前に付けた一部のコマンドを受け付けていた問題を修正しました。"
       },
       {
-        "title": "Claude Code 2.1.305（日本語）",
+        "title": "Claude Code 2.1.308（日本語）",
         "author": "Claude Code CHANGELOG",
-        "text": "sandbox.allowNestedUserNamespaces を追加しました。Linux でサンドボックス内のコマンドが user namespace を作れるようになります（Chromium、rootless の podman）。ただし、これによりサンドボックスのファイル保護を回避できるようになります。\nCLAUDE_CODE_RETRY_WATCHDOG_USAGE_LIMIT_RECHECK_MS を追加しました。無人のリトライモード（CLAUDE_CODE_RETRY_WATCHDOG）が、リセット前に解除された利用上限に気づけるようになります。\nVertex、Bedrock などのプロバイダーで、エンドポイントやゲートウェイが tool search を拒否するとき、また ToolSearch が禁止されているか --tools から外されているゲートウェイの後ろで、すべてのリクエストが失敗する問題を修正しました（2.1.304 でのリグレッション）。Claude Code はこれを使わずにリトライするようになりました。\nモデル名が modelOverrides の値と大文字小文字や [1m] のタグだけ違うとき、/effort と /autocompact の設定が効かない問題を修正しました。\nbare リポジトリの新しい worktree が、既定のブランチではなくローカルの HEAD から始まることがある問題と、変更の無いサブエージェントの worktree が片付けられないことがある問題を修正しました。\nディスクがいっぱいのとき、Bash のコマンドが ENOSPC とファイルパスだけを出して失敗する問題を修正しました。ディスクがいっぱいで何も実行していないことを伝えるようになりました。\nクラウドセッションや SDK の setMcpServers で渡した MCP サーバーが、セッションの途中で自分の設定にある同じ名前のサーバーに置き換わる問題を修正しました。\nサブエージェントがフォールバックのモデルに切り替わった後、Claude がそのサブエージェントの作業のモデル名を間違えて示す問題を修正しました。"
+        "text": "バグの修正と信頼性の向上を行いました。"
       },
       {
-        "title": "Claude Code 2.1.304（日本語）",
+        "title": "Claude Code 2.1.307（日本語）",
         "author": "Claude Code CHANGELOG",
-        "text": "先に動くプラグインが Mod のフックを飛ばしたとき、トランスクリプトにイベントとプラグインの名前を示す行を出すようにしました。\nMod の tool.check の答えに decider: \"person\" を追加しました。確認を承認できるのは許可のダイアログかホストのコールバックだけになり、尋ねる相手がいない場面では Mod の理由を添えて拒否されます。\nMod の tool.check のイベントに e.isReadOnly を追加しました。ツールの呼び出しが読み取り専用のときに設定されます。\n/auto-mode-setup を追加しました。プロジェクトと最近のセッションを読んで auto mode に環境を教える、手順に沿ったセットアップです。Bedrock、Vertex、Foundry、Claude apps gateway、テレメトリーを無効にしたセッションでも使えるようになりました。\n/claude-api managed-agents-secure を追加しました。Managed Agents のエージェントの設定を、Anthropic が公開しているセキュリティガイドと比べます。何も変更はしません。\nトランスクリプトの表示（Ctrl+O）で、コンパクションの要約にそれまでに呼んだツールの名前を出すようにしました。\nPro と Max のプランで、しばらく使っていない会話を再開すると 5 時間の利用上限のうち目立つ量を使うとき、警告を出すようにしました。そのまま再開するか、新しい会話を始めるかを選べます。新しい会話で前の会話に触れれば、Claude がそれを探します。\n起動時に ANTHROPIC_API_KEY を承認した後や、/config で「Use custom API key」を切り替えた後、1 時間ごとの確認まで組織のポリシーが更新されない問題を修正しました。"
+        "text": "Claude API のコードを API バージョン 2026-10-21 に移行する /claude-api api-version を追加しました。\n許可ルール、auto mode、安全チェック、hook、サンドボックスがツールの呼び出しを止めた、確認を求めた、または差し戻したときに、その呼び出しごとに出る OpenTelemetry のイベント claude_code.safety_event を追加しました。\nCLAUDE_CODE_DISABLE_1M_CONTEXT を設定していて、モデルが opus[1m] のような [1m] 付きのエイリアスのときに、リクエストが model-not-found エラーで失敗する問題を修正しました。\n独自の ANTHROPIC_BASE_URL のゲートウェイを経由する場合や Foundry で、効果の無い prompt-caching-scope のベータヘッダーが送られていた問題を修正しました。\nmacOS でログインキーチェーンがロックされている間、claude -p で MCP サーバーに「needs authentication」と表示されていた問題を修正しました。今は理由を表示し、ロックを解除した後の次の実行では、サインインし直さなくても接続します。\nMCP サーバーの接続中に macOS や Linux のコンピューターがスリープすると、タイムアウトと報告され、ヘッドレスの実行では失敗したままになっていた問題を修正しました。\n呼び出しの途中で接続が切れたときに、HTTP の MCP ツールの呼び出しが 2 回送られていた問題を修正しました。今は読み取り専用か冪等なツールだけを再試行します。\nバックグラウンドのタスクが動いているときに、SDK の MCP サーバーの最新のツールが無いままターンが始まることがあった問題を修正しました。"
       }
     ];
 
