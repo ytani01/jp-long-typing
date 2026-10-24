@@ -83,17 +83,82 @@ flowchart LR
 
 ## cron で毎日流す
 
-crontab への登録は手で行う（`crontab -e`）。毎朝 6 時に流し、ログを `~/tmp/update-notes.log` に足していく例:
+`update-notes.sh google,claude` を cron で毎日流すと、Google 翻訳で訳し（落ちたら claude で流し直し）、
+commit と push まで済ませる。crontab への登録は手で行う。
+
+```mermaid
+flowchart TD
+  A[事前の確認] --> B["crontab -e で登録"] --> C[次の日にログを見る]
+  C -->|変更なし / push まで済んだ| D[そのまま]
+  C -->|途中で落ちた| F[戻して止まる。次の日に流し直される] --> D
+  C -->|push だけ落ちた| E["git push を手で流す"] --> D
+```
+
+### 1. 事前の確認
+
+```bash
+systemctl is-active cronie   # active と出ること
+mkdir -p ~/tmp               # ログの置き場所
+ssh -T git@github.com        # "successfully authenticated" と出ること
+```
+
+- cron には `ssh-agent` が無いので、GitHub への push に使う鍵はパスフレーズの無いものにする
+- 手で 1 回流して通るか見ておくとよい（`./update-notes.sh google,claude`。変更があれば commit と push まで進む）
+
+### 2. 登録
+
+`crontab -e` で次の 1 行を足す。毎朝 6 時に流し、ログを `~/tmp/update-notes.log` に足していく。
 
 ```crontab
 0 6 * * * export PATH=$HOME/.local/bin:$HOME/.local/share/mise/shims:/usr/bin:/bin; { date; $HOME/work/jp-long-typing/update-notes.sh google,claude; } >> $HOME/tmp/update-notes.log 2>&1
 ```
 
-- cron の `PATH` は `/usr/bin:/bin` だけなので、`claude`（`~/.local/bin`）と、mise で入れた `node` の置き場所を足す
-- `date` の行はログの区切り。ログは消さずに伸びるので、ときどき見て消す
-- push は SSH の鍵で行う。cron には `ssh-agent` が無いので、パスフレーズの無い鍵でないと push で止まる
-- 「変更なし」の日は何もせずに終わる。`run` が落ちたときは戻してから止まるので、次の日にそのまま流し直される
-- push だけ落ちた日は、commit が手元に残る。次に変更がある日まで push されないので、ログを見て `git push` を手で流す
+- 時刻は先頭の 2 つ（分 時）で決まる。リポジトリが別の場所にあるときは `$HOME/work/jp-long-typing` を直す
+- cron の `PATH` は `/usr/bin:/bin` だけなので、`claude`（`~/.local/bin`）と、mise で入れた `node` の置き場所を足している
+- 訳を claude だけにするなら `google,claude` を消す（Claude の利用上限を使う）。`google` だけにすると、落ちた日は更新されない
+- 登録できたかは `crontab -l` で見る
+
+### 3. 動いたかの確かめ方
+
+次の日に `~/tmp/update-notes.log` を見る。`date` の行が 1 回分の区切り。ログは消さずに伸びるので、ときどき見て消す。
+
+変更が無かった日（最後が「変更なし」）:
+
+```
+Sat Oct 24 13:25:05 JST 2026
+same     2026年10月22日の更新（2 項目）
+same     2026年10月21日の更新（4 項目）
+same     2026年10月20日の更新（7 項目）
+CLAUDE_NOTES: 変更なし
+same     Claude Code 2.1.310（日本語）（8 項目）
+same     Claude Code 2.1.309（日本語）（8 項目）
+same     Claude Code 2.1.308（日本語）（1 項目）
+CLAUDE_CODE_JA: 変更なし
+変更なし
+```
+
+更新した日（`same` の行などは略。最後に commit と push の行が出る）:
+
+```
+訳すもの: 2 件 → /tmp/tmp.XXXXXXXXXX.json
+2 件を google で訳す
+/tmp/tmp.XXXXXXXXXX.json に訳を書いた
+index.html と last-source.json を書き換えた（2026-10-24 時点）
+OK: 選択欄・訳の表示・まとめ・コンソール
+[master f7a6f72] chore(news): リリースノートと CHANGELOG の訳を 2026-10-24 時点に更新する
+To github.com:ytani01/jp-long-typing.git
+   22b4cc6..f7a6f72  master -> master
+```
+
+Google 翻訳が落ちた日は、`Google 翻訳に失敗した（…）` と `claude で流し直す` の後に、claude で同じ流れが続く。
+
+- 途中で落ちたときは `index.html` と `last-source.json` を戻してから止まるので、次の日にそのまま流し直される。
+  何で落ちたかは下の「失敗したとき」を見る
+- push だけ落ちた日は、commit が手元に残る。次に変更がある日まで push されないので、`git push` を手で流す
+
+### 4. 止め方
+
+`crontab -e` でその行を消すか、先頭に `#` を付ける。
 
 ## 失敗したとき
 
