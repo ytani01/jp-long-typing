@@ -34,14 +34,13 @@ TODO-034 で `update-notes.sh` 1 本で commit・push まで通るようにな�
 - reviewer: 偽の notes.py と使い捨てのリポジトリで、google が check で落ちて claude で成功、最後まで落ちて HEAD に戻る、を実測。
   名前の確かめで `,claude` などの空の要素が何も書かずに止まることも実測（[reviewer-report.md](../agents/TODO-035/reviewer-report.md)）
 - verifier: クローンと bare リポジトリで、文書の crontab の行を `env -i` で cron の環境にして流し、google で訳して check が OK、
-  commit と bare への push まで通った。`ssh -T git@github.com` の認証も通った（[verifier-report.md](../agents/TODO-035/verifier-report.md)）
+  commit と bare への push まで通った。決着の後に、google を名前解決で落として claude -p で流し直す経路も同じ形で通し、push まで通った。`ssh -T git@github.com` の認証も通った（[verifier-report.md](../agents/TODO-035/verifier-report.md)）
 - main: `gogle,claude` で何もせず exit 1 になること
 
 ## 残ること
 
 - 末尾の `,`（`google,`）は黙って捨てられ、google だけで流れる。1 つで流れるだけで実害が無いので直していない
 - 訳し方の名前の一覧が `notes.py` の `choices` と `update-notes.sh` の 2 か所にある。訳し方を足すときは両方を直す
-- claude で流し直す経路は、本物の `claude -p` では通していない（偽の notes.py での分岐と、cron の PATH で `claude` が見つかることは確認済み）
 
 ## 分担の振り返り
 

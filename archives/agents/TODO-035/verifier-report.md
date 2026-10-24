@@ -56,3 +56,30 @@ env -i HOME=$HOME PATH=/usr/bin:/bin /bin/sh -c 'export PATH=$HOME/.local/bin:$H
 ## 後始末
 
 一時ディレクトリ（clone・bare・ログ）は削除済み。
+
+## 2 回目（google 失敗から claude で流し直す経路）
+
+HEAD は fc55ddd（cron 登録の文書と update-notes.sh を含む版）から、使い捨てのクローンと bare で流した。
+
+- クローンの `.claude/skills/update-release-notes/notes.py` の `GOOGLE_URL` を `https://clients5.invalid/…` に書き換えて commit（2c387a5）。google は必ず落ちる。
+- 流したコマンド: 1 回目と同じ形。`env -i HOME=$HOME PATH=/usr/bin:/bin /bin/sh -c '<crontab の行、パスは一時ディレクトリへ置換>'`（`google,claude`、`timeout 1200`）
+- 終了コード: 0（タスクの出力 `EXIT=0`）
+
+ログの要点（流れの順）:
+
+1. `2 件 → /tmp/tmp.EcYVMr1dYR.json` / `2 件を google で訳す`
+2. `Google 翻訳に失敗した（2026年10月20日の更新）: Command '['curl', '-sfL', '--max-time', '30', 'https://clients5.invalid/translate_a/t?…'] returned non-zero exit status 6.`（exit status 6 は curl の名前解決失敗）
+3. `claude で流し直す`
+4. `2 件を claude で訳す` / `/tmp/tmp.EcYVMr1dYR.json に訳を書いた` / `index.html と last-source.json を書き換えた（2026-10-24 時点）`
+5. `OK: 選択欄・訳の表示・まとめ・コンソール`（check が OK）
+6. `[master d63193e] chore(news): リリースノートと CHANGELOG の訳を 2026-10-24 時点に更新する`（2 files changed）
+7. `To …/remote.git  fc55ddd..d63193e  master -> master`
+
+push された commit（bare の d63193e）の index.html:
+
+- 新しく入った訳（Claude Tag API、Inference hooks、user profiles、web fetch など）は日本語。英語のまま残っている箇所は無し（目視の範囲）。
+- 「Claude Code 2.1.310（日本語）」の本文も日本語。
+
+食い違い: 無し。claude 経路は今回初めて通り、流れは指示どおり（google 失敗、流し直し、check、commit、push）。
+
+後始末: 一時ディレクトリ（todo035b と 1 回目の todo035）は削除済み。本物のリポジトリの `git status` は空（変更なし）、HEAD は fc55ddd のまま。commit も push もしていない。
