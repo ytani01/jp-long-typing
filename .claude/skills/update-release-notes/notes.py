@@ -2,7 +2,7 @@
 """update-release-notes の取得・訳・埋め込み・確認（TODO-031、TODO-032）。
 
   notes.py run [--by claude|google] WORK.json        fetch → translate → apply → check を続けて行う
-  notes.py fetch WORK.json                           新しい 3 日分・3 版を取得して WORK.json に書く
+  notes.py fetch WORK.json                           新しい 3 日分・3 版・3 件を取得して WORK.json に書く
   notes.py translate [--by claude|google] WORK.json  changed / new の en を訳して ja に書く（既定は claude）
   notes.py apply WORK.json                           WORK.json の訳を index.html に埋め込む
   notes.py check                                     index.html を配信して Playwright で確かめる
@@ -17,6 +17,7 @@ import tempfile
 import time
 import urllib.parse
 import sys
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -25,8 +26,13 @@ LAST = Path(__file__).resolve().with_name('last-source.json')
 NOTES_URL = 'https://platform.claude.com/docs/en/release-notes/overview.md'
 CODE_URL = 'https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md'
 PLAYWRIGHT = '/home/ytani/.local/lib/playwright/node_modules/playwright/index.mjs'
-CONSTS = {'notes': 'CLAUDE_NOTES', 'code': 'CLAUDE_CODE_JA'}
-AUTHORS = {'notes': 'Claude Platform リリースノート', 'code': 'Claude Code CHANGELOG'}
+CACHY_RSS = 'https://cachyos.org/rss.xml'
+CACHY_POST = 'https://raw.githubusercontent.com/CachyOS/website/master/src/content/post/%s.md'
+CONSTS = {'notes': 'CLAUDE_NOTES', 'code': 'CLAUDE_CODE_JA', 'cachy': 'CACHYOS_JA'}
+EN_CONST = 'CACHYOS_EN'  # cachy の英語版。訳す対象ではないので CONSTS に入れない（TODO-037）
+# ログとコミットメッセージで使う、人向けの名前
+NAMES = {'notes': 'リリースノート', 'code': 'CHANGELOG', 'cachy': 'CachyOS ブログ'}
+AUTHORS = {'notes': 'Claude Platform リリースノート', 'code': 'Claude Code CHANGELOG', 'cachy': 'CachyOS ブログ'}
 ITEM = re.compile(r'^[*-] (.*)')
 MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
           'August', 'September', 'October', 'November', 'December']
@@ -79,26 +85,73 @@ def parse_code(md):
     return vers
 
 
-def block(src, kind):
-    m = re.search(r'    const %s = (\[.*?\n    \]);' % CONSTS[kind], src, re.S)
+def parse_cachy():
+    """RSS の新しい 3 件。本文は frontmatter・コードブロック・表を除き、段落とリストの項目を 1 行ずつにする。"""
+    try:
+        items = list(ET.fromstring(get(CACHY_RSS)).iter('item'))[:3]
+    except ET.ParseError as x:
+        sys.exit(f'RSS が XML として読めない: {x}')
+    slugs = []
+    for it in items:
+        m = re.fullmatch(r'https://cachyos\.org/blog/([^/]+)/', (it.findtext('link') or '').strip())
+        if not m:
+            sys.exit(f"RSS の item の link が読めない: {it.findtext('link')!r}（書式が変わったかも）")
+        slugs.append(m.group(1))
+    posts = []
+    for slug in slugs:
+        md = get(CACHY_POST % slug)
+        m = re.match(r'---\n(.*?)\n---\n', md, re.S)
+        t = m and re.search(r'^title: *(.+)$', m.group(1), re.M)
+        if not t:
+            sys.exit(f'{slug}: frontmatter に title が読めない（書式が変わったかも）')
+        items = []
+        fence = False
+        for line in md[m.end():].splitlines():
+            line = line.strip()
+            if line.startswith('```'):
+                fence = not fence
+            elif fence or not line or line.startswith('|') or re.fullmatch(r'-{3,}', line):
+                continue
+            else:
+                line = re.sub(r'^(?:[*-] |#+ )', '', line)
+                line = re.sub(r'<(https?://[^>]+)>', r'\1', line)
+                items.append(line.strip())
+        if fence:
+            sys.exit(f'{slug}: コードブロックが閉じていない（書式が変わったかも）')
+        posts.append({'title': t.group(1).strip().strip('"\'') + '（日本語）', 'en': items})
+    return posts
+
+
+def block(src, name):
+    m = re.search(r'    const %s = (\[.*?\n    \]);' % name, src, re.S)
     if not m:
-        sys.exit(f'index.html に const {CONSTS[kind]} が見つからない')
+        sys.exit(f'index.html に const {name} が見つからない')
     return m
 
 
 def current(src, kind):
-    return {o['title']: o['text'] for o in json.loads(block(src, kind).group(1))}
+    return {o['title']: o['text'] for o in json.loads(block(src, CONSTS[kind]).group(1))}
 
 
 def fetch(work):
     src = INDEX.read_text(encoding='utf-8')
     last = json.loads(LAST.read_text(encoding='utf-8')) if LAST.exists() else {}
-    out = {'notes': parse_notes(get(NOTES_URL)), 'code': parse_code(get(CODE_URL))}
-    # 元の Markdown の書式が変わって読めなくなったとき、「変更なし」で黙って終わらないように
-    for kind, entries in out.items():
-        if len(entries) != 3 or not all(e['en'] for e in entries):
-            sys.exit(f'{CONSTS[kind]}: 3 つ読めない、または項目が 0 件のものがある（書式が変わったかも）: '
-                     + ', '.join(f"{e['title']}（{len(e['en'])}）" for e in entries))
+    out = {}
+    for kind, parse in {'notes': lambda: parse_notes(get(NOTES_URL)), 'code': lambda: parse_code(get(CODE_URL)),
+                        'cachy': parse_cachy}.items():
+        # 取れない・読めないものは更新せず、前の内容のまま残す（TODO-037）。黙って「変更なし」で終わらないよう理由を出す。
+        # 「取得できず更新しなかった」の行を update-notes.sh が見て、コミットメッセージから外し、終了コードを 1 にする
+        try:
+            entries = parse()
+            if len(entries) != 3 or not all(e['en'] for e in entries):
+                sys.exit('3 つ読めない、または項目が 0 件のものがある（書式が変わったかも）: '
+                         + ', '.join(f"{e['title']}（{len(e['en'])}）" for e in entries))
+            out[kind] = entries
+        except (subprocess.CalledProcessError, SystemExit) as x:
+            why = f'取得に失敗 {x.cmd[-1]}' if isinstance(x, subprocess.CalledProcessError) else x.code
+            print(f'{CONSTS[kind]}（{NAMES[kind]}）: 取得できず更新しなかった。前の内容のまま残す（理由: {why}）')
+    if not out:
+        sys.exit('全部取得できなかった')
     todo = 0
     for kind, entries in out.items():
         cur = current(src, kind)
@@ -160,7 +213,7 @@ def by_claude(entries):
 
 def translate(work, by):
     data = json.loads(Path(work).read_text(encoding='utf-8'))
-    entries = [e for k in CONSTS for e in data[k] if e['status'] != 'same']
+    entries = [e for k in CONSTS for e in data.get(k, []) if e['status'] != 'same']
     if not entries:
         print('訳すものは無い')
         return
@@ -190,6 +243,8 @@ def apply(work):
     bad = []
     today = datetime.date.today().isoformat()
     for kind in CONSTS:
+        if kind not in data:  # fetch が取得できなかったものは前のまま
+            continue
         cur = current(src, kind)
         objs = []
         for e in data[kind]:
@@ -201,23 +256,33 @@ def apply(work):
                     bad.append(f"{e['title']}: 英語 {len(e['en'])} 項目に対し訳 {len(ja)} 項目（空や改行も不可）")
                 text = '\n'.join(ja)
             objs.append({'title': e['title'], 'author': AUTHORS[kind], 'text': text})
-        m = block(src, kind)
+        m = block(src, CONSTS[kind])
         src = src[:m.start(1)] + dump(objs) + src[m.end(1):]
+        names = [CONSTS[kind]]
+        if kind == 'cachy':
+            # 英語版は本文そのまま（題名は（日本語）なし）。取得のたびに書く
+            en = [{'title': e['title'].removesuffix('（日本語）'), 'author': AUTHORS[kind],
+                   'text': '\n'.join(plain(s) for s in e['en'])} for e in data[kind]]
+            m = block(src, EN_CONST)
+            src = src[:m.start(1)] + dump(en) + src[m.end(1):]
+            names.append(EN_CONST)
         # 日付のコメントは、変わった側だけ直す
         if any(e['status'] != 'same' for e in data[kind]):
-            src = re.sub(r'(// update-release-notes skill が書き換える（)\d{4}-\d{2}-\d{2}(.*\n    const %s = )' % CONSTS[kind],
-                         rf'\g<1>{today}\g<2>', src)
+            for name in names:
+                src = re.sub(r'(// update-release-notes skill が書き換える（)\d{4}-\d{2}-\d{2}(.*\n    const %s = )' % name,
+                             rf'\g<1>{today}\g<2>', src)
     if bad:
         sys.exit('\n'.join(bad))
     INDEX.write_text(src, encoding='utf-8')
-    last = {k: [{'title': e['title'], 'en': e['en']} for e in data[k]] for k in CONSTS}
+    last = json.loads(LAST.read_text(encoding='utf-8')) if LAST.exists() else {}
+    last.update({k: [{'title': e['title'], 'en': e['en']} for e in data[k]] for k in CONSTS if k in data})
     LAST.write_text(json.dumps(last, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     print(f'index.html と {LAST.name} を書き換えた（{today} 時点）')
 
 
 CHECK_JS = r"""
 import { chromium } from '%s';
-const [url, notes, code] = [process.argv[1], JSON.parse(process.argv[2]), JSON.parse(process.argv[3])];
+const [url, notes, code, cachyJa, cachyEn] = [process.argv[1], ...process.argv.slice(2, 6).map(a => JSON.parse(a))];
 const strip = s => s.replace(/\s/g, '');
 const fails = [], errs = [];
 const b = await chromium.launch(); const p = await b.newPage();
@@ -235,9 +300,17 @@ if (nDays !== 3 || nJa !== 3) fails.push(`選択欄の日付が ${nDays} 個、�
 notes.forEach((n, i) => { if (!opts.some(o => o[0] === `claude-${i}` && o[1] === `・${n.title}`)) fails.push(`選択欄に ・${n.title} が無い`); });
 const at = vals.indexOf('claude-code');
 code.forEach((c, i) => { const o = opts[at + 1 + i]; if (!o || o[0] !== `code-ja-${i}` || o[1] !== `・${c.title}`) fails.push(`（英語）の後の ${i + 1} 番目が ・${c.title} でない`); });
+if (cachyJa.length !== 3 || cachyEn.length !== 3) fails.push(`CACHYOS_JA が ${cachyJa.length} 件、CACHYOS_EN が ${cachyEn.length} 件（3 件ずつのはず）`);
+const cg = await p.$$eval('#optgroup-cachyos option', os => os.map(o => [o.value, o.textContent]));
+const want = [...cachyEn.map((c, i) => [`cachy-en-${i}`, `・${c.title}（英語）`]), ...cachyJa.map((c, i) => [`cachy-ja-${i}`, `・${c.title}`])];
+if (JSON.stringify(cg) !== JSON.stringify(want)) fails.push(`CachyOS の選択欄が違う: ${JSON.stringify(cg)}`);
 const shown = async v => { await p.selectOption('#preset-select', v); await p.waitForTimeout(500); return strip(await p.evaluate(() => document.body.innerText)); };
 let t = await shown('code-ja-0');
 if (!t.includes(strip(code[0].text.split('\n')[0]))) fails.push(`${code[0].title} を選んでも訳が出ない`);
+for (const [v, a] of [['cachy-en-0', cachyEn[0]], ['cachy-ja-0', cachyJa[0]]]) {
+  t = await shown(v);
+  if (!a || !t.includes(strip(a.text))) fails.push(`${v} を選んでも本文が出ない`);
+}
 t = await shown('claude-summary');
 notes.forEach(n => { if (!t.includes(strip(`【${n.title}】${n.text.split('\n')[0]}`))) fails.push(`まとめに 【${n.title}】本文 が無い`); });
 if (code.some(c => t.includes(strip(c.text.split('\n')[0])))) fails.push('まとめに CHANGELOG が入っている');
@@ -252,6 +325,8 @@ def check():
     src = INDEX.read_text(encoding='utf-8')
     notes = [{'title': t, 'text': x} for t, x in current(src, 'notes').items()]
     code = [{'title': t, 'text': x} for t, x in current(src, 'code').items()]
+    cachy_ja = [{'title': t, 'text': x} for t, x in current(src, 'cachy').items()]
+    cachy_en = json.loads(block(src, EN_CONST).group(1))
     with socket.socket() as s:
         s.bind(('127.0.0.1', 0))
         port = s.getsockname()[1]
@@ -265,7 +340,8 @@ def check():
             except OSError:
                 time.sleep(0.1)
         r = subprocess.run(['node', '--input-type=module', '-e', CHECK_JS, f'http://127.0.0.1:{port}/',
-                            json.dumps(notes, ensure_ascii=False), json.dumps(code, ensure_ascii=False)], timeout=120)
+                            json.dumps(notes, ensure_ascii=False), json.dumps(code, ensure_ascii=False),
+                            json.dumps(cachy_ja, ensure_ascii=False), json.dumps(cachy_en, ensure_ascii=False)], timeout=120)
     finally:
         server.terminate()
         server.wait()

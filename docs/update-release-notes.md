@@ -1,7 +1,8 @@
 # リリースノートの更新スクリプト
 
 `index.html` には、Claude Platform リリースノートの新しい 3 日分（`CLAUDE_NOTES`）と、
-Claude Code の CHANGELOG の最新 3 版（`CLAUDE_CODE_JA`）を、日本語に訳して埋め込んである。
+Claude Code の CHANGELOG の最新 3 版（`CLAUDE_CODE_JA`）と、CachyOS ブログの最新 3 件（`CACHYOS_JA`）を、日本語に訳して埋め込んである。
+CachyOS は英語の本文もそのまま埋め込む（`CACHYOS_EN`）。
 リリースノートは CORS を許していないのでブラウザでは取得できず、CHANGELOG には日本語版が無い。
 そこで `.claude/skills/update-release-notes/notes.py` で取得・訳・埋め込み・確認を行い、
 コミットと push で反映する。
@@ -59,9 +60,9 @@ flowchart LR
 
 | サブコマンド | すること |
 |---|---|
-| `fetch 作業用.json` | 英語版を取得し、前回の英語（`last-source.json`）と比べて、日・版ごとに `same` / `changed` / `new` を出す。全部 `same` なら「変更なし」で終える |
+| `fetch 作業用.json` | 英語版を取得し、前回の英語（`last-source.json`）と比べて、日・版・記事ごとに `same` / `changed` / `new` を出す。全部 `same` なら「変更なし」で終える |
 | `translate [--by claude\|google] 作業用.json` | `changed` と `new` のものだけ、`en` の 1 項目を `ja` の 1 要素に訳す |
-| `apply 作業用.json` | `index.html` の `CLAUDE_NOTES` / `CLAUDE_CODE_JA` と日付のコメントを書き換え、`last-source.json` を今回の英語にする |
+| `apply 作業用.json` | `index.html` の `CLAUDE_NOTES` / `CLAUDE_CODE_JA` / `CACHYOS_JA` / `CACHYOS_EN` と日付のコメントを書き換え、`last-source.json` を今回の英語にする |
 | `check` | 空いているポートで `index.html` を配信し、Playwright で表示を確かめる。`OK` と出れば済み |
 
 ### 訳し方（`--by`）
@@ -79,6 +80,7 @@ flowchart LR
 - コンソールにエラーが無い（api.rss2json.com のエラーは数えない。NHK ニュースの取得の失敗で、内蔵のニュースで動く）
 - 練習文の選択欄に「・YYYY年M月D日の更新」が 3 つ並ぶ
 - 「・Claude Code 2.1.xxx（英語）」の後に「・Claude Code 2.1.xxx（日本語）」が 3 つ並び、選ぶと訳が出る
+- 「🐧 CachyOS」の欄に、英語 3 件と「（日本語）」3 件が並び、英語と日本語を 1 件ずつ選ぶと本文の全部が出る
 - 「Claudeニュースまとめ」を選ぶと、3 日分が `【タイトル】本文` の形で出る（CHANGELOG は含まない）
 
 ## cron で毎日流す
@@ -91,6 +93,7 @@ flowchart TD
   A[事前の確認] --> B["crontab -e で登録"] --> C[次の日にログを見る]
   C -->|変更なし / push まで済んだ| D[そのまま]
   C -->|途中で落ちた| F[戻して止まる。次の日に流し直される] --> D
+  C -->|「取得できず更新しなかった」の行がある| G[取れた分は push 済み。取れなかったものの取得先や書式を確かめる] --> D
   C -->|push だけ落ちた| E["git push を手で流す"] --> D
 ```
 
@@ -134,6 +137,10 @@ same     Claude Code 2.1.310（日本語）（8 項目）
 same     Claude Code 2.1.309（日本語）（8 項目）
 same     Claude Code 2.1.308（日本語）（1 項目）
 CLAUDE_CODE_JA: 変更なし
+same     CachyOS August 2026 Release（日本語）（50 項目）
+same     CachyOS June 2026 Release（日本語）（70 項目）
+same     CachyOS April 2026 Release（日本語）（72 項目）
+CACHYOS_JA: 変更なし
 変更なし
 ```
 
@@ -160,11 +167,27 @@ Google 翻訳が落ちた日は、`Google 翻訳に失敗した（…）` と `c
 
 `crontab -e` でその行を消すか、先頭に `#` を付ける。
 
+## CachyOS ブログの取り込み方（TODO-037）
+
+- 新しい順は `https://cachyos.org/rss.xml` の `item` の並びで決め、本文は GitHub の
+  `CachyOS/website` の `src/content/post/<slug>.md`（`<slug>` は `link` の `/blog/<slug>/`）から取る
+- frontmatter（題名は `title`）、コードブロック、表の行（`|` で始まる行）を除き、
+  段落とリストの項目を 1 行ずつ `en` にする（リストの `* ` `- `、見出しの `#`、字下げは外す。見出しの行も `en` に入る）。`<https://…>` は山括弧だけ外して URL を残す
+- 日本語版の題名は `title（日本語）`。変わったかの判定・訳・検証は他の 2 つと同じ。英語版の `CACHYOS_EN` は判定によらず、`apply` のたびに `en` から書き直す
+- 3 件読めない、frontmatter に `title` が無い、`en` が 0 件、コードブロックが閉じていない、のときは、CachyOS を更新しない（前の内容のまま）
+- 対応していない書式: `~~~` のコードブロック、番号付きリスト、画像、HTML、途中で改行した段落（今の記事には無い。出たときは足す）
+
 ## 失敗したとき
 
-どの段も、失敗すると何も書かずにエラーで止まる。
+どの段も、失敗すると何も書かずにエラーで止まる。ただし `fetch` は、リリースノート・CHANGELOG・CachyOS のどれかが
+取れない・読めないときは、そのものだけ更新せず前の内容のまま残し、
+`<const 名>（<人向けの名前>）: 取得できず更新しなかった。前の内容のまま残す（理由: …）` を 1 行出す
+（人向けの名前は リリースノート / CHANGELOG / CachyOS ブログ）。
+全部取れないときは終了コード 1 で止まる。取れなかったものは、`update-notes.sh` のコミットメッセージに入らない。
+`update-notes.sh` は、ログに「取得できず更新しなかった」の行があれば、取れた分の commit と push を済ませてから終了コード 1 で終わる
+（差分が無くて commit しないときも 1）。cron のログで気づける。`/update-release-notes` では、行が出たら利用者に知らせる
 
-- `fetch` が「3 つ読めない」で止まる: 元の Markdown の書式が変わった可能性がある
+- `fetch` が「3 つ読めない」で更新しない: 元の Markdown の書式が変わった可能性がある
 - `translate` が止まる: 通信エラー、Google の制限、訳の数が英語と合わない、など。`--by` を変えて流し直してよい
 - `notes.py run` を直接流して `check` が落ちたときは、`apply` が書いた `index.html` と `last-source.json` が残る。
   やり直すなら戻してから流す（戻さないと次の `run` は「変更なし」で終わる）
@@ -178,7 +201,8 @@ Google 翻訳が落ちた日は、`Google 翻訳に失敗した（…）` と `c
 `index.html` と `last-source.json` を一緒にコミットして push する。
 
 ```
-chore(news): リリースノートと CHANGELOG の訳を YYYY-MM-DD 時点に更新する
+chore(news): リリースノートと CHANGELOG と CachyOS ブログの訳を YYYY-MM-DD 時点に更新する
 ```
 
-片方だけ更新したときは「リリースノートを…」「CHANGELOG の訳を…」とする。
+変わったものだけを「と」でつなぐ（「リリースノート」「CHANGELOG」「CachyOS ブログ」。CachyOS は英語も含むが「訳」でまとめる）。
+`update-notes.sh` はログの `CLAUDE_NOTES` / `CLAUDE_CODE_JA` / `CACHYOS_JA` の「変更なし」の行で判定する。

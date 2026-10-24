@@ -1,5 +1,5 @@
 #!/bin/bash
-# リリースノートと CHANGELOG の訳を更新し、commit と push まで行う（TODO-034）
+# リリースノート・CHANGELOG・CachyOS ブログの訳を更新し、commit と push まで行う（TODO-034）
 # 使い方: ./update-notes.sh [google|google,claude]   引数が無ければ claude で訳す
 # google,claude のように並べると、落ちたら index.html などを戻して次で流し直す（TODO-035）
 set -euo pipefail
@@ -29,11 +29,18 @@ for i in "${!bys[@]}"; do
   echo "${bys[i + 1]} で流し直す" >&2
 done
 
-git diff --quiet -- "${files[@]}" && exit 0
+# 取得できず更新しなかったものがあれば、取れた分の commit・push を済ませてから 0 以外で終わる（TODO-037）
+skipped=0
+grep -q ': 取得できず更新しなかった' "$log" && skipped=1
+git diff --quiet -- "${files[@]}" && exit "$skipped"
 
-# 片方だけ変わったときは、変わった方だけをメッセージに書く（docs/update-release-notes.md の「終わったら」）
-what='リリースノートと CHANGELOG の訳'
-grep -q '^CLAUDE_NOTES: 変更なし' "$log" && what='CHANGELOG の訳'
-grep -q '^CLAUDE_CODE_JA: 変更なし' "$log" && what='リリースノート'
-git commit -m "chore(news): ${what}を $(date +%F) 時点に更新する" -- "${files[@]}"
+# 変わったものだけをメッセージに書く（docs/update-release-notes.md の「終わったら」）。
+# 名前は notes.py が出す「<const 名>: 変更なし」「<const 名>（…）: 取得できず更新しなかった…」の行で判定する
+what=
+for pair in CLAUDE_NOTES:リリースノート "CLAUDE_CODE_JA: CHANGELOG " "CACHYOS_JA: CachyOS ブログ"; do
+  grep -Eq "^${pair%%:*}(（.*）)?: (変更なし|取得できず更新しなかった)" "$log" || what+="${what:+と}${pair#*:}"
+done
+what=${what# }  # 英数字の前後の半角空白のうち、先頭の分は外す
+git commit -m "chore(news): ${what}の訳を $(date +%F) 時点に更新する" -- "${files[@]}"
 git push
+exit "$skipped"

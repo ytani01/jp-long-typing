@@ -19,6 +19,7 @@ https://github.com/user-attachments/assets/6a59d1eb-0fea-4e91-b951-f491ec981455
   - 起動時と「ニュース更新」で、[Claude Code の CHANGELOG](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md) の最新版の先頭 8 項目（英語）を取得。取得できないときは内蔵のデータを使う。
   - [Claude Platform リリースノート](https://platform.claude.com/docs/en/release-notes/overview)の新しい 3 日分は、日本語に訳して `index.html` に埋め込んである。CORS を許していないのでブラウザでは取得しない。更新はスクリプトか Claude Code の `/update-release-notes` で行う（使い方は [docs/update-release-notes.md](docs/update-release-notes.md)）。
   - CHANGELOG の最新 3 版の先頭 8 項目は、日本語に訳して `index.html` に埋め込んである（「Claudeニュースまとめ」には含めない）。更新はリリースノートと同じく `/update-release-notes` で行う。
+  - [CachyOS のブログ](https://cachyos.org/blog/)の最新 3 件は、英語の本文と日本語訳を `index.html` に埋め込んである（練習文の選択欄の「🐧 CachyOS」）。更新は `/update-release-notes` で行う。
   - Markdown のリンク・コード・強調の記法は外して練習文にする。
 - **NHKニュース自動取得機能**:
   - オンライン起動時に最新のNHKニュースRSSフィードを自動取得。
