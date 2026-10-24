@@ -944,7 +944,7 @@
        ======================================================== */
     const CLAUDE_CODE_URL = 'https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md';
 
-    // update-release-notes skill が書き換える（2026-10-23 時点の内容）
+    // update-release-notes skill が書き換える（2026-10-24 時点の内容）
     const CLAUDE_NOTES = [
       {
         "title": "2026年10月22日の更新",
@@ -959,12 +959,17 @@
       {
         "title": "2026年10月20日の更新",
         "author": "Claude Platform リリースノート",
-        "text": "Claude Enterprise の組織向けに、Inference hooks がベータを終了しました。\nユーザープロファイルの提供を開始しました。各 API リクエストがどのエンドカスタマーのものかを Anthropic に伝えられます。プラットフォームやゲートウェイを運営している場合や、API アクセスを再販している場合に、安全上の措置を組織全体ではなく 1 社のエンドカスタマーだけに適用できるようになります。SDK と ant CLI は新しい /v1/user_profiles エンドポイントに対応しています。\nAdmin API に組織の Webhook をベータとして追加しました。webhooks-2026-10-07 のベータヘッダーで使えます。/v1/organizations/webhooks エンドポイントでは、2 種類のイベントの Webhook エンドポイントを登録できます。Anthropic が組織のユーザープロファイルを制限または禁止したときのものと、その制限や禁止が解除されたときのものです。利用を希望する場合は、Anthropic のアカウントチームにご連絡ください。\n組織の管理者は、Claude Console の Capabilities ページで組織の web fetch をオフにできるようになりました。web fetch がオフのときは、web fetch ツールを含む Messages API のリクエストが 400 エラーで失敗します。Claude Managed Agents のセッションでは、代わりに web_fetch の呼び出しがエージェントにエラーの結果を返します。web fetch がオンのときは、同じページで web fetch の許可するドメインやブロックするドメインも設定できます。詳しくは How to use web fetch と Domain filtering をご覧ください。\nClaude Managed Agents の web_fetch ツールが、Claude Console の Capabilities ページで設定した組織の web fetch のドメイン制限に従うようになりました。URL は、リダイレクトでたどり着いたものも含めて、組織のリストと、エージェントの web_fetch ツールにある allowed_domains または blocked_domains のリストの両方を通る必要があります。詳しくは Restrict web search and web fetch domains をご覧ください。\nClaude Managed Agents のセッションは、Claude Console の Capabilities ページにある組織の web search の設定に従います。Allow web search の設定には 10 月 6 日から、web search のドメイン制限には 10 月 14 日から従っています。エージェントが受け取るのは、組織のドメイン制限と、エージェントの web_search ツールにある allowed_domains または blocked_domains のリストの両方が許可した検索結果だけです。詳しくは Restrict web search and web fetch domains をご覧ください。"
+        "text": "Claude Tag API は、「experimental-claude-tag-2026-10-21」ベータ ヘッダーを備えた Claude Enterprise 組織向けのベータ版で利用できます。その /v1/organizations/claude_tag/ エンドポイントは、Slack チャネルと Slack ワークスペースの Claude Tag 設定を読み取って変更し、チャネルに適用される設定とそれぞれの由来を表示し、Access バンドルをアタッチします。プライマリ所有者が read:claude_tag または write:claude_tag スコープで claude.ai に作成した Admin API キーを使用して呼び出します。クロード プラットフォーム (クロード コンソール) 組織では利用できません。\nClaude Enterprise 組織の推論フックはベータ版ではありません。\nユーザー プロファイルを開始しました。これにより、Anthropic に各 API リクエストがどのエンド顧客を対象としているのかを伝えることができます。プラットフォームやゲートウェイを運用している場合、または API アクセスを再販している場合、安全性強化措置は組織全体ではなく 1 つのエンド顧客に適用される可能性があります。 SDK と ant CLI は、新しい /v1/user_profiles エンドポイントをサポートします。\n「webhooks-2026-10-07」ベータ ヘッダーを使用して、ベータ版として組織 Webhook を Admin API に追加しました。その /v1/organizations/webhooks エンドポイントは、2 つのイベント タイプの Webhook エンドポイントを登録します。1 つは Anthropic が組織のユーザー プロファイルの 1 つを制限または禁止したとき用で、もう 1 つは制限または禁止が終了したとき用です。アクセスをリクエストするには、Anthropic アカウント チームにお問い合わせください。\n組織管理者は、クロード コンソールの [機能] ページで組織の Web 取得をオフにできるようになりました。 Web フェッチがオフの場合、Web フェッチ ツールを含む Messages API リクエストは 400 エラーで失敗します。 Claude 管理エージェント セッションでは、「web_fetch」呼び出しは代わりにエラー結果をエージェントに返します。 Web フェッチをオンにすると、管理者は同じページで Web フェッチに対して許可またはブロックされるドメインを設定することもできます。 「Web フェッチとドメイン フィルタリングの使用方法」を参照してください。\nClaude 管理エージェントでは、「web_fetch」ツールが、Claude コンソールの [機能] ページで設定された組織の Web フェッチ ドメイン制限に従うようになりました。リダイレクトによって到達した URL を含む URL は、組織のリストと、エージェントの「web_fetch」ツールの「allowed_domains」または「blocked_domains」リストの両方を渡す必要があります。 「Web 検索および Web フェッチ ドメインの制限」を参照してください。\nClaude 管理エージェントでは、セッションは、Claude コンソールの [機能] ページにある組織の Web 検索設定に従います。つまり、10 月 6 日から Web 検索を許可する設定、10 月 14 日から Web 検索ドメイン制限が適用されます。エージェントは、組織のドメイン制限と、エージェントの「web_search」ツールの「allowed_domains」または「blocked_domains」リストの両方が許可する検索結果のみを受け取ります。 「Web 検索および Web フェッチ ドメインの制限」を参照してください。"
       }
     ];
 
-    // update-release-notes skill が書き換える（2026-10-23 時点の内容。最新 3 版の先頭 8 項目の訳。TODO-020）
+    // update-release-notes skill が書き換える（2026-10-24 時点の内容。最新 3 版の先頭 8 項目の訳。TODO-020）
     const CLAUDE_CODE_JA = [
+      {
+        "title": "Claude Code 2.1.310（日本語）",
+        "author": "Claude Code CHANGELOG",
+        "text": "Bedrock、Vertex、Foundry に監視ツールとプラグイン監視を追加し、テレメトリまたは不要なトラフィックが無効になっている場合を監視します。そこでも長いフォアグラウンドスリープがブロックされるようになりました\n「effort-2025-11-24」ベータ値または会話中のシステム メッセージを拒否する一部のゲートウェイおよび互換サーバーの背後でリクエストが失敗する問題を修正しました。クロード コードはそれらを使用せずに再試行するようになりました\n「cleanupPeriodDays」が非常に大きな値に設定されている場合に、貼り付けた画像などの最近のファイルを削除するバックグラウンド クリーンアップを修正しました。\n「プロンプトが長すぎます」エラー後の圧縮で、base64 や SVG などの高密度テキストを含む会話が多すぎるため、次のリクエストが再び失敗する可能性がある問題を修正しました。\nシンボリック リンクのリンク先が表示されないファイル読み取り許可プロンプトを修正しました\n長い編集後に外部エディタが閉じた瞬間に発生する質問の自動続行タイムアウトを修正しました\nWindows: Git Bash が見つからず、フックのコマンドが引用符で囲まれた文字列 (引用符で囲まれたパスなど) のみである場合にツールを呼び出せるようにする PreToolUse フックと PermissionRequest フックを修正しました。\n作業ディレクトリ外での最初の読み取り前の自動モードのプロンプトが改善されました。これらの読み取りをブロックすると、シェルコマンドが許可を求めるようになったと表示されるようになりました。"
+      },
       {
         "title": "Claude Code 2.1.309（日本語）",
         "author": "Claude Code CHANGELOG",
@@ -974,11 +979,6 @@
         "title": "Claude Code 2.1.308（日本語）",
         "author": "Claude Code CHANGELOG",
         "text": "バグの修正と信頼性の向上を行いました。"
-      },
-      {
-        "title": "Claude Code 2.1.307（日本語）",
-        "author": "Claude Code CHANGELOG",
-        "text": "Claude API のコードを API バージョン 2026-10-21 に移行する /claude-api api-version を追加しました。\n許可ルール、auto mode、安全チェック、hook、サンドボックスがツールの呼び出しを止めた、確認を求めた、または差し戻したときに、その呼び出しごとに出る OpenTelemetry のイベント claude_code.safety_event を追加しました。\nCLAUDE_CODE_DISABLE_1M_CONTEXT を設定していて、モデルが opus[1m] のような [1m] 付きのエイリアスのときに、リクエストが model-not-found エラーで失敗する問題を修正しました。\n独自の ANTHROPIC_BASE_URL のゲートウェイを経由する場合や Foundry で、効果の無い prompt-caching-scope のベータヘッダーが送られていた問題を修正しました。\nmacOS でログインキーチェーンがロックされている間、claude -p で MCP サーバーに「needs authentication」と表示されていた問題を修正しました。今は理由を表示し、ロックを解除した後の次の実行では、サインインし直さなくても接続します。\nMCP サーバーの接続中に macOS や Linux のコンピューターがスリープすると、タイムアウトと報告され、ヘッドレスの実行では失敗したままになっていた問題を修正しました。\n呼び出しの途中で接続が切れたときに、HTTP の MCP ツールの呼び出しが 2 回送られていた問題を修正しました。今は読み取り専用か冪等なツールだけを再試行します。\nバックグラウンドのタスクが動いているときに、SDK の MCP サーバーの最新のツールが無いままターンが始まることがあった問題を修正しました。"
       }
     ];
 

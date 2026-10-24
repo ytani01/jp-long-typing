@@ -19,6 +19,7 @@
     {
       "title": "2026年10月20日の更新",
       "en": [
+        "The [Claude Tag API](https://platform.claude.com/docs/en/manage-claude/claude-tag-api) is available in beta for Claude Enterprise organizations with the `experimental-claude-tag-2026-10-21` beta header. Its `/v1/organizations/claude_tag/` endpoints read and change [Claude Tag](https://claude.com/docs/claude-tag/overview) settings on Slack channels and Slack workspaces, show which settings apply in a channel and where each comes from, and attach Access bundles. Call it with an Admin API key that your primary owner creates in claude.ai with the `read:claude_tag` or `write:claude_tag` scope. It is not available to Claude Platform (Claude Console) organizations.",
         "[Inference hooks](https://platform.claude.com/docs/en/manage-claude/inference-hooks) are out of beta for Claude Enterprise organizations.",
         "We've launched [user profiles](https://platform.claude.com/docs/en/manage-claude/user-profiles), so you can tell Anthropic which of your end customers each API request is for. If you operate a platform or gateway, or resell API access, a safety enforcement action can then apply to one end customer instead of your whole organization. The SDK and the `ant` CLI support the new [`/v1/user_profiles` endpoints](https://platform.claude.com/docs/en/api/user_profiles).",
         "We've added [organization webhooks](https://platform.claude.com/docs/en/manage-claude/organization-webhooks) to the [Admin API](https://platform.claude.com/docs/en/manage-claude/admin-api), in beta with the `webhooks-2026-10-07` beta header. Its [`/v1/organizations/webhooks` endpoints](https://platform.claude.com/docs/en/api/beta/organization/webhooks) register webhook endpoints for two event types: one for when Anthropic restricts or bans one of your organization's user profiles, and one for when the restriction or ban ends. To request access, contact your Anthropic account team.",
@@ -29,6 +30,19 @@
     }
   ],
   "code": [
+    {
+      "title": "Claude Code 2.1.310（日本語）",
+      "en": [
+        "Added the Monitor tool and plugin monitors on Bedrock, Vertex, and Foundry, and when telemetry or nonessential traffic is disabled; long foreground sleeps are now blocked there too",
+        "Fixed requests failing behind some gateways and compatible servers that reject the `effort-2025-11-24` beta value or mid-conversation system messages; Claude Code now retries without them",
+        "Fixed background cleanup deleting some recent files, such as pasted images, when `cleanupPeriodDays` is set to a very large value",
+        "Fixed compaction after a \"Prompt is too long\" error keeping too much of a conversation with dense text, such as base64 or SVG, so the next request could fail again",
+        "Fixed file read permission prompts not showing where a symbolic link leads",
+        "Fixed a question's auto-continue timeout firing the moment the external editor closed after a long edit",
+        "Windows: Fixed PreToolUse and PermissionRequest hooks letting a tool call through when Git Bash is missing and the hook's command is only quoted strings, such as a quoted path",
+        "Improved auto mode's prompt before the first read outside the working directories: it now says when blocking those reads makes shell commands ask for permission"
+      ]
+    },
     {
       "title": "Claude Code 2.1.309（日本語）",
       "en": [
@@ -46,19 +60,6 @@
       "title": "Claude Code 2.1.308（日本語）",
       "en": [
         "Bug fixes and reliability improvements"
-      ]
-    },
-    {
-      "title": "Claude Code 2.1.307（日本語）",
-      "en": [
-        "Added `/claude-api api-version` to move Claude API code to API version `2026-10-21`",
-        "Added the `claude_code.safety_event` OpenTelemetry event for each tool call a permission rule, auto mode, a safety check, a hook or the sandbox stopped, prompted or sent back",
-        "Fixed requests failing with a model-not-found error when `CLAUDE_CODE_DISABLE_1M_CONTEXT` is set and the model is an alias with the `[1m]` suffix, such as `opus[1m]`",
-        "Fixed the `prompt-caching-scope` beta header being sent behind custom `ANTHROPIC_BASE_URL` gateways and on Foundry, where it has no effect",
-        "Fixed MCP servers showing \"needs authentication\" in `claude -p` on macOS while the login keychain was locked; they now say why, and the next run after an unlock connects without a new sign-in",
-        "Fixed MCP servers being reported as timed out, and staying failed in headless runs, when a macOS or Linux computer went to sleep while they were connecting",
-        "Fixed HTTP MCP tool calls being sent twice when the connection closed mid-call; only read-only or idempotent tools are now retried",
-        "Fixed a turn sometimes starting without an SDK MCP server's latest tools when a background task was running"
       ]
     }
   ]
