@@ -27,13 +27,16 @@ ln -s ~/work/jp-long-typing/.claude/skills/update-release-notes/notes.py ~/bin/u
 「変更なし」や `check` の失敗のときは commit しない。
 
 - 始める前に `index.html` か `last-source.json` に commit していない変更があると、何もせずに止まる。
-  `check` が落ちた後に流し直すときも、先に「失敗したとき」の手順で戻す
+  `notes.py run` で `check` が落ちた後に流すときも、先に「失敗したとき」の手順で戻す
+- `run` が落ちたとき（translate でも check でも）は、`index.html` と `last-source.json` を HEAD に戻す。
+  `google,claude` のように `,` で並べてあれば次の訳し方で流し直し、最後のものも落ちたら止まる
 - push は `git push` をそのまま流すので、ほかに push していない commit があれば一緒に送られる。
   push だけ落ちたときは、流し直さずに `git push` を手で流す（流し直すと「変更なし」で終わり、push されない）
 
 ```bash
 ./update-notes.sh          # claude で訳す
 ./update-notes.sh google   # Google 翻訳で訳す
+./update-notes.sh google,claude   # Google 翻訳で訳し、落ちたら戻して claude で流し直す
 ```
 
 1 段ずつ流すときや、commit の前に中身を見たいときは `notes.py` を直接使う。
@@ -78,13 +81,27 @@ flowchart LR
 - 「・Claude Code 2.1.xxx（英語）」の後に「・Claude Code 2.1.xxx（日本語）」が 3 つ並び、選ぶと訳が出る
 - 「Claudeニュースまとめ」を選ぶと、3 日分が `【タイトル】本文` の形で出る（CHANGELOG は含まない）
 
+## cron で毎日流す
+
+crontab への登録は手で行う（`crontab -e`）。毎朝 6 時に流し、ログを `~/tmp/update-notes.log` に足していく例:
+
+```crontab
+0 6 * * * export PATH=$HOME/.local/bin:$HOME/.local/share/mise/shims:/usr/bin:/bin; { date; $HOME/work/jp-long-typing/update-notes.sh google,claude; } >> $HOME/tmp/update-notes.log 2>&1
+```
+
+- cron の `PATH` は `/usr/bin:/bin` だけなので、`claude`（`~/.local/bin`）と、mise で入れた `node` の置き場所を足す
+- `date` の行はログの区切り。ログは消さずに伸びるので、ときどき見て消す
+- push は SSH の鍵で行う。cron には `ssh-agent` が無いので、パスフレーズの無い鍵でないと push で止まる
+- 「変更なし」の日は何もせずに終わる。`run` が落ちたときは戻してから止まるので、次の日にそのまま流し直される
+- push だけ落ちた日は、commit が手元に残る。次に変更がある日まで push されないので、ログを見て `git push` を手で流す
+
 ## 失敗したとき
 
 どの段も、失敗すると何も書かずにエラーで止まる。
 
 - `fetch` が「3 つ読めない」で止まる: 元の Markdown の書式が変わった可能性がある
 - `translate` が止まる: 通信エラー、Google の制限、訳の数が英語と合わない、など。`--by` を変えて流し直してよい
-- `run` で `check` が落ちたときは、`apply` が書いた `index.html` と `last-source.json` が残る。
+- `notes.py run` を直接流して `check` が落ちたときは、`apply` が書いた `index.html` と `last-source.json` が残る。
   やり直すなら戻してから流す（戻さないと次の `run` は「変更なし」で終わる）
 
   ```bash
