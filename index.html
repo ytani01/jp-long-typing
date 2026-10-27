@@ -945,41 +945,41 @@
        ======================================================== */
     const CLAUDE_CODE_URL = 'https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md';
 
-    // update-release-notes skill が書き換える（2026-10-24 時点の内容）
+    // update-release-notes skill が書き換える（2026-10-28 時点の内容）
     const CLAUDE_NOTES = [
+      {
+        "title": "2026年10月23日の更新",
+        "author": "Claude Platform リリースノート",
+        "text": "Claude Tag API は、「experimental-claude-tag-2026-10-21」ベータ ヘッダーを備えた Claude Enterprise 組織向けのベータ版で利用できます。その /v1/organizations/claude_tag/ エンドポイントは、Slack チャネルと Slack ワークスペースの Claude Tag 設定を読み取って変更し、チャネルに適用される設定とそれぞれの由来を表示し、Access バンドルをアタッチします。プライマリ所有者が read:claude_tag または write:claude_tag スコープで claude.ai に作成した Admin API キーを使用して呼び出します。クロード プラットフォーム (クロード コンソール) 組織では利用できません。"
+      },
       {
         "title": "2026年10月22日の更新",
         "author": "Claude Platform リリースノート",
-        "text": "Claude Models on Google Cloud (Anthropic managed) の提供を開始しました。Anthropic が運用し、お使いの Google Cloud プロジェクトから利用する Claude API です。アクセスは Google Cloud IAM で管理し、請求は Google Cloud Marketplace で行います。\nClaude Models on Google Cloud (Anthropic managed) の Claude Opus 5.5 で Fast mode を使えるようになりました。"
+        "text": "Google Cloud で Claude Models (Anthropic マネージド) を開始しました。これは、Anthropic が運営し、Google Cloud プロジェクトを通じてアクセスできる Claude API です。 Google Cloud IAM はアクセスを制御します。 Google Cloud Marketplace が請求を処理します。\n高速モードは、Google Cloud（Anthropic マネージド）上の Claude Models の Claude Opus 5.5 で利用できます。"
       },
       {
         "title": "2026年10月21日の更新",
         "author": "Claude Platform リリースノート",
-        "text": "API バージョン 2026-10-21 をリリースしました。アップグレードの方法は Migrating to API version 2026-10-21 で説明しています。\nAPI バージョン 2026-10-21 を既定で送る、新しいバージョンのクライアント SDK と ant CLI をリリースしました。Python SDK 2.0.0、TypeScript SDK 1.0.0、C# SDK 13.0.0、Go SDK 2.0.0、Java SDK 3.0.0、PHP SDK 1.0.0、Ruby SDK 2.0.0、ant CLI 2.0.0 です。詳しくは Switch to 2026-10-21 をご覧ください。\n新しい SDK と CLI には API バージョンによらない破壊的変更もあり、ライセンスも MIT License から Apache 2.0 に変わりました。詳しくは SDK and CLI changes をご覧ください。\nユーザープロファイルに enforcement_status と enforcement_actions のフィールドを追加しました。エンドカスタマーのいずれかを Anthropic が制限または禁止したかを確認できます。制限や禁止が続いているプロファイルを探すには、新しい enforcement_status[] フィルターを付けてプロファイルの一覧を取得します。詳しくは Check whether Anthropic has restricted or banned a profile をご覧ください。"
-      },
-      {
-        "title": "2026年10月20日の更新",
-        "author": "Claude Platform リリースノート",
-        "text": "Claude Tag API は、「experimental-claude-tag-2026-10-21」ベータ ヘッダーを備えた Claude Enterprise 組織向けのベータ版で利用できます。その /v1/organizations/claude_tag/ エンドポイントは、Slack チャネルと Slack ワークスペースの Claude Tag 設定を読み取って変更し、チャネルに適用される設定とそれぞれの由来を表示し、Access バンドルをアタッチします。プライマリ所有者が read:claude_tag または write:claude_tag スコープで claude.ai に作成した Admin API キーを使用して呼び出します。クロード プラットフォーム (クロード コンソール) 組織では利用できません。\nClaude Enterprise 組織の推論フックはベータ版ではありません。\nユーザー プロファイルを開始しました。これにより、Anthropic に各 API リクエストがどのエンド顧客を対象としているのかを伝えることができます。プラットフォームやゲートウェイを運用している場合、または API アクセスを再販している場合、安全性強化措置は組織全体ではなく 1 つのエンド顧客に適用される可能性があります。 SDK と ant CLI は、新しい /v1/user_profiles エンドポイントをサポートします。\n「webhooks-2026-10-07」ベータ ヘッダーを使用して、ベータ版として組織 Webhook を Admin API に追加しました。その /v1/organizations/webhooks エンドポイントは、2 つのイベント タイプの Webhook エンドポイントを登録します。1 つは Anthropic が組織のユーザー プロファイルの 1 つを制限または禁止したとき用で、もう 1 つは制限または禁止が終了したとき用です。アクセスをリクエストするには、Anthropic アカウント チームにお問い合わせください。\n組織管理者は、クロード コンソールの [機能] ページで組織の Web 取得をオフにできるようになりました。 Web フェッチがオフの場合、Web フェッチ ツールを含む Messages API リクエストは 400 エラーで失敗します。 Claude 管理エージェント セッションでは、「web_fetch」呼び出しは代わりにエラー結果をエージェントに返します。 Web フェッチをオンにすると、管理者は同じページで Web フェッチに対して許可またはブロックされるドメインを設定することもできます。 「Web フェッチとドメイン フィルタリングの使用方法」を参照してください。\nClaude 管理エージェントでは、「web_fetch」ツールが、Claude コンソールの [機能] ページで設定された組織の Web フェッチ ドメイン制限に従うようになりました。リダイレクトによって到達した URL を含む URL は、組織のリストと、エージェントの「web_fetch」ツールの「allowed_domains」または「blocked_domains」リストの両方を渡す必要があります。 「Web 検索および Web フェッチ ドメインの制限」を参照してください。\nClaude 管理エージェントでは、セッションは、Claude コンソールの [機能] ページにある組織の Web 検索設定に従います。つまり、10 月 6 日から Web 検索を許可する設定、10 月 14 日から Web 検索ドメイン制限が適用されます。エージェントは、組織のドメイン制限と、エージェントの「web_search」ツールの「allowed_domains」または「blocked_domains」リストの両方が許可する検索結果のみを受け取ります。 「Web 検索および Web フェッチ ドメインの制限」を参照してください。"
+        "text": "APIバージョン「2026-10-21」をリリースしました。 API バージョン 2026-10-21 への移行には、アップグレード方法が示されています。\nデフォルトで API バージョン 2026-10-21 を送信するクライアント SDK と ant CLI の新しいバージョンをリリースしました: Python SDK 2.0.0、TypeScript SDK 1.0.0、C# SDK 13.0.0、Go SDK 2.0.0、Java SDK 3.0.0、PHP SDK 1.0.0、Ruby SDK 2.0.0、および「ant」CLI 2.0.0。 「2026 年 10 月 21 日への切り替え」を参照してください。\n新しい SDK および CLI バージョンには、API バージョンに依存しない重大な変更も含まれており、MIT ライセンスではなく Apache 2.0 に基づいてライセンスが付与されています。 SDK と CLI の変更を参照してください。\nユーザー プロファイルに「enforcement_status」フィールドと「enforcement_actions」フィールドを追加しました。これにより、Anthropic がエンド顧客の 1 人を制限または禁止したかどうかを確認できるようになりました。オープンな制限または禁止が設定されているプロファイルを見つけるには、新しい enforcement_status[] フィルターを使用してプロファイルをリストします。 「Anthropic がプロファイルを制限または禁止しているかどうかを確認する」を参照してください。"
       }
     ];
 
-    // update-release-notes skill が書き換える（2026-10-24 時点の内容。最新 3 版の先頭 8 項目の訳。TODO-020）
+    // update-release-notes skill が書き換える（2026-10-28 時点の内容。最新 3 版の先頭 8 項目の訳。TODO-020）
     const CLAUDE_CODE_JA = [
+      {
+        "title": "Claude Code 2.1.312（日本語）",
+        "author": "Claude Code CHANGELOG",
+        "text": "Microsoft Entra ID の oid など、sub 以外の id_token クレームによってユーザーを識別するために、Claude アプリ ゲートウェイに oidc.user_id_claim を追加しました。\nクリックして送信を追加しました: 全画面で、キューに入れられたメッセージの下にある「今すぐ送信」ヒントをクリックすると、そのキーと同様にすぐにメッセージが送信されます。\nVS Code 拡張機能からサインインした後、残りのセッションで管理対象設定と組織ポリシーが取得されない問題を修正しました。\nクロードがサブディレクトリ内の非常に大きな CLAUDE.md、ルール ファイル、または @-include ファイルの先頭だけを確認した後に上書きする問題を修正しました。 「今すぐ書く」はクロードにすべて読むか、その場で編集するよう依頼します\nBash cd を git リポジトリの奥深くに実行した後、ディレクトリごとのスキルと paths: スキルが見つからない問題を修正しました。\n端末でセッションを再開した後の最初の応答が、次回セッションが再開されたときに失われる可能性があるまれなケースを修正しました\n無効な名前のコマンドがすべてのコマンドのロードを停止し、「claude -p」が出力されなくなる可能性がある問題を修正しました。\n古いセッション ファイルのクリーンアップを同時に実行すると、PDF ページで読み取りツールが「pdftoppm に失敗しました: 画像を書き込めませんでした」というメッセージが表示されて失敗することがある問題を修正しました。"
+      },
+      {
+        "title": "Claude Code 2.1.311（日本語）",
+        "author": "Claude Code CHANGELOG",
+        "text": "ホストが実行中のプロセスを報告している間、アイドル セッションを維持するために、「--hold-idle-file」と「--max-hold-min」を「self-hosted-runner」に追加しました。\nクロードに説明を求めるときに表示される、説明出力スタイルのヒントを追加しました\nCLAUDE.md ファイルに非常に長いリスト項目が含まれている場合、起動時およびファイルの読み取りまたは編集後に長時間フリーズする問題を修正しました。\nMCP サーバーがリソースの読み取りに応答しなかった場合、またはスキルがダウンロード中にタイムアウトになるまでクロードの中断が有効にならない問題を修正しました。\nリクエストが 200K トークンを超えると、「1M コンテキストには使用量クレジットが必要です」というメッセージが表示されて標準コンテキスト セッションが停止する問題を修正しました。クロード・コードは会話をコンパクトにして続行します\nファイル内の数千行を変更すると、書き込みと編集が実行後最大 5 秒間停止し、変更された行が 0 行であると報告される問題を修正しました。\nサブエージェントの開始後に接続が終了したサーバーからはサブエージェントが MCP ツールを使用できない問題を修正しました。\nこれらのファイルがセッションの早い段階で編集された場合、自動圧縮の直後に古い MEMORY.md および CLAUDE.md コンテンツがクロードに表示される問題を修正しました。"
+      },
       {
         "title": "Claude Code 2.1.310（日本語）",
         "author": "Claude Code CHANGELOG",
         "text": "Bedrock、Vertex、Foundry に監視ツールとプラグイン監視を追加し、テレメトリまたは不要なトラフィックが無効になっている場合を監視します。そこでも長いフォアグラウンドスリープがブロックされるようになりました\n「effort-2025-11-24」ベータ値または会話中のシステム メッセージを拒否する一部のゲートウェイおよび互換サーバーの背後でリクエストが失敗する問題を修正しました。クロード コードはそれらを使用せずに再試行するようになりました\n「cleanupPeriodDays」が非常に大きな値に設定されている場合に、貼り付けた画像などの最近のファイルを削除するバックグラウンド クリーンアップを修正しました。\n「プロンプトが長すぎます」エラー後の圧縮で、base64 や SVG などの高密度テキストを含む会話が多すぎるため、次のリクエストが再び失敗する可能性がある問題を修正しました。\nシンボリック リンクのリンク先が表示されないファイル読み取り許可プロンプトを修正しました\n長い編集後に外部エディタが閉じた瞬間に発生する質問の自動続行タイムアウトを修正しました\nWindows: Git Bash が見つからず、フックのコマンドが引用符で囲まれた文字列 (引用符で囲まれたパスなど) のみである場合にツールを呼び出せるようにする PreToolUse フックと PermissionRequest フックを修正しました。\n作業ディレクトリ外での最初の読み取り前の自動モードのプロンプトが改善されました。これらの読み取りをブロックすると、シェルコマンドが許可を求めるようになったと表示されるようになりました。"
-      },
-      {
-        "title": "Claude Code 2.1.309（日本語）",
-        "author": "Claude Code CHANGELOG",
-        "text": "macOS と Linux でサンドボックス内の Bash コマンドを実行するとき、各コマンドの前にシェルの起動ファイルがサンドボックスの外で実行されていた問題を修正しました。\nmacOS のサンドボックスで、パターンのフォルダーにシンボリックリンク経由でたどり着く場合に、denyWrite の glob パターンがパスの実際の場所に適用されなかった問題を修正しました。\nサンドボックス内のコマンドや自動で承認された編集が、--mcp-config で渡した MCP の設定ファイルを変更できてしまう問題を修正しました。\nprint と SDK のセッションで、無効にした MCP サーバーが後の許可の確認によって再接続されてしまう問題を修正しました。\nリダイレクト先を開けずに失敗することがあるコマンドで設定された変数を、Bash の許可チェックが信頼してしまう問題を修正しました。\ncd を別のコマンドで包んだり前に何かを付けたりしてディレクトリを移動してから git を実行する複合コマンドの一部で、単純な cd のときのように Bash の許可チェックが確認を出さなかった問題を修正しました。\nサブシェルも含む一部のコマンドで、Edit(path) の拒否ルールがそのパスへの Bash のリダイレクトを防げなかった問題を修正しました。\nworktree で分離したセッションが、分離のガードで拒否すべき、ロケールを前に付けた一部のコマンドを受け付けていた問題を修正しました。"
-      },
-      {
-        "title": "Claude Code 2.1.308（日本語）",
-        "author": "Claude Code CHANGELOG",
-        "text": "バグの修正と信頼性の向上を行いました。"
       }
     ];
 
