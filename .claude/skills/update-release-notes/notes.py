@@ -261,7 +261,9 @@ def parse_nhk():
             desc = desc[:desc.rfind('。') + 1]
         # 配信日時は日本時間の ISO 8601。index.html が一番新しいものをまとめの行に出す（TODO-040）。読めなければ ''
         try:
-            at = parsedate_to_datetime(it.findtext('pubDate') or '').astimezone(JST).isoformat()
+            dt = parsedate_to_datetime(it.findtext('pubDate') or '')
+            # 時差が無い・-0000 のものは naive になる。実行した機械の時刻に頼らず日本時間と読む
+            at = (dt.replace(tzinfo=JST) if dt.tzinfo is None else dt.astimezone(JST)).isoformat()
         except (TypeError, ValueError):
             at = ''
         out.append({'title': title, 'author': 'NHKニュース', 'text': f'{title}。\n{desc}' if desc else f'{title}。', 'pubDate': at})
