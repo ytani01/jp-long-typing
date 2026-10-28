@@ -1,5 +1,5 @@
 #!/bin/bash
-# リリースノート・CHANGELOG・CachyOS ブログの訳を更新し、commit と push まで行う（TODO-034）
+# リリースノート・CHANGELOG・CachyOS ブログの訳と、内蔵の NHK ニュースを更新し、commit と push まで行う（TODO-034）
 # 使い方: ./update-notes.sh [google|google,claude]   引数が無ければ claude で訳す
 # google,claude のように並べると、落ちたら index.html などを戻して次で流し直す（TODO-035）
 set -euo pipefail
@@ -41,6 +41,15 @@ for pair in CLAUDE_NOTES:リリースノート "CLAUDE_CODE_JA: CHANGELOG " "CAC
   grep -Eq "^${pair%%:*}(（.*）)?: (変更なし|取得できず更新しなかった)" "$log" || what+="${what:+と}${pair#*:}"
 done
 what=${what# }  # 英数字の前後の半角空白のうち、先頭の分は外す
-git commit -m "chore(news): ${what}の訳を $(date +%F) 時点に更新する" -- "${files[@]}"
+# NHK ニュースは訳ではないので、「の訳を」の前には入れない（TODO-039）
+nhk=NHK\ ニュース
+grep -Eq "^FALLBACK_NHK_NEWS(（.*）)?: (変更なし|取得できず更新しなかった)" "$log" && nhk=
+if [[ -z $what ]]; then
+  msg="${nhk}を"
+else
+  msg="${what}の訳を"
+  [[ -z $nhk ]] || msg="${nhk}と、${msg}"
+fi
+git commit -m "chore(news): ${msg} $(date +%F) 時点に更新する" -- "${files[@]}"
 git push
 exit "$skipped"

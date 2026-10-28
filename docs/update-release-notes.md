@@ -3,6 +3,7 @@
 `index.html` には、Claude Platform リリースノートの新しい 3 日分（`CLAUDE_NOTES`）と、
 Claude Code の CHANGELOG の最新 3 版（`CLAUDE_CODE_JA`）と、CachyOS ブログの最新 3 件（`CACHYOS_JA`）を、日本語に訳して埋め込んである。
 CachyOS は英語の本文もそのまま埋め込む（`CACHYOS_EN`）。
+これとは別に、内蔵の NHK ニュース（`FALLBACK_NHK_NEWS`）も RSS の最新 6 件に書き換える。訳さない（TODO-039）。
 リリースノートは CORS を許していないのでブラウザでは取得できず、CHANGELOG には日本語版が無い。
 そこで `.claude/skills/update-release-notes/notes.py` で取得・訳・埋め込み・確認を行い、
 コミットと push で反映する。
@@ -63,6 +64,7 @@ flowchart LR
 | `fetch 作業用.json` | 英語版を取得し、前回の英語（`last-source.json`）と比べて、日・版・記事ごとに `same` / `changed` / `new` を出す。全部 `same` なら「変更なし」で終える |
 | `translate [--by claude\|google] 作業用.json` | `changed` と `new` のものだけ、`en` の 1 項目を `ja` の 1 要素に訳す |
 | `apply 作業用.json` | `index.html` の `CLAUDE_NOTES` / `CLAUDE_CODE_JA` / `CACHYOS_JA` / `CACHYOS_EN` と日付のコメントを書き換え、`last-source.json` を今回の英語にする |
+| `nhk` | NHK の RSS（`cat0.xml`）の最新 6 件で `FALLBACK_NHK_NEWS` を書き換える。整形はブラウザの `fetchNhkNews` と同じ。`run` は `apply` の後に自動で呼ぶ。取得・解析に失敗したら更新せず、`FALLBACK_NHK_NEWS（NHK ニュース）: 取得できず更新しなかった…` を出す |
 | `check` | 空いているポートで `index.html` を配信し、Playwright で表示を確かめる。`OK` と出れば済み |
 
 ### 訳し方（`--by`）
@@ -182,7 +184,7 @@ Google 翻訳が落ちた日は、`Google 翻訳に失敗した（…）` と `c
 どの段も、失敗すると何も書かずにエラーで止まる。ただし `fetch` は、リリースノート・CHANGELOG・CachyOS のどれかが
 取れない・読めないときは、そのものだけ更新せず前の内容のまま残し、
 `<const 名>（<人向けの名前>）: 取得できず更新しなかった。前の内容のまま残す（理由: …）` を 1 行出す
-（人向けの名前は リリースノート / CHANGELOG / CachyOS ブログ）。
+（人向けの名前は リリースノート / CHANGELOG / CachyOS ブログ / NHK ニュース）。
 全部取れないときは終了コード 1 で止まる。取れなかったものは、`update-notes.sh` のコミットメッセージに入らない。
 `update-notes.sh` は、ログに「取得できず更新しなかった」の行があれば、取れた分の commit と push を済ませてから終了コード 1 で終わる
 （差分が無くて commit しないときも 1）。cron のログで気づける。`/update-release-notes` では、行が出たら利用者に知らせる
@@ -206,3 +208,6 @@ chore(news): リリースノートと CHANGELOG と CachyOS ブログの訳を Y
 
 変わったものだけを「と」でつなぐ（「リリースノート」「CHANGELOG」「CachyOS ブログ」。CachyOS は英語も含むが「訳」でまとめる）。
 `update-notes.sh` はログの `CLAUDE_NOTES` / `CLAUDE_CODE_JA` / `CACHYOS_JA` の「変更なし」の行で判定する。
+
+NHK ニュースは訳ではないので、変わったときだけ先頭に付ける。NHK だけなら `chore(news): NHK ニュースを YYYY-MM-DD 時点に更新する`、
+他と一緒なら `chore(news): NHK ニュースと、リリースノートの訳を YYYY-MM-DD 時点に更新する`（`FALLBACK_NHK_NEWS` の行で判定）。

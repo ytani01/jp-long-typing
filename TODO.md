@@ -12,10 +12,10 @@
 |------|------|------|
 | 見込み | Opus 5.5 / effort medium | implementer（Sonnet 5.5 / medium）+ reviewer（Opus 5.5 / high）+ verifier（Haiku 5.5 / medium） |
 
-- [ ] `notes.py` で NHK の RSS（`cat0.xml`）を直接取得し、`FALLBACK_NHK_NEWS` を最新 6 件で書き換える（訳さない）
-- [ ] 整形はブラウザの `fetchNhkNews` に揃える（「見出し。\n要約（最後の「。」まで）」）
-- [ ] `update-notes.sh` のコミットメッセージに、変わったときだけ「NHK ニュース」を入れる
-- [ ] 取得に失敗したら NHK だけ更新せず、他の分は今までどおり進める
+- [x] `notes.py` で NHK の RSS（`cat0.xml`）を直接取得し、`FALLBACK_NHK_NEWS` を最新 6 件で書き換える（訳さない）
+- [x] 整形はブラウザの `fetchNhkNews` に揃える（「見出し。\n要約（最後の「。」まで）」）
+- [x] `update-notes.sh` のコミットメッセージに、変わったときだけ「NHK ニュース」を入れる
+- [x] 取得に失敗したら NHK だけ更新せず、他の分は今までどおり進める
 
 **無駄を省く工夫:** 訳の処理（claude / google）は変えないので確かめ直さない。確認は `notes.py` で NHK の分を 1 回流し、`index.html` の差分とブラウザでの表示を見るだけにする（push はしない）
 

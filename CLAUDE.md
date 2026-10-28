@@ -14,6 +14,7 @@
 - Claude Code の CHANGELOG の日本語版も同じ skill で訳して `CLAUDE_CODE_JA` に
   埋め込む。英語版はこれまでどおりブラウザで取得する（TODO-020）
 - CachyOS ブログの最新 3 件も同じ skill で、英語の本文を `CACHYOS_EN`、訳を `CACHYOS_JA` に埋め込む（TODO-037）
+- 内蔵の NHK ニュース（`FALLBACK_NHK_NEWS`）も同じ `notes.py` が RSS から取って最新 6 件に書き換える。訳さない（TODO-039）
 
 ## 確認の手順
 

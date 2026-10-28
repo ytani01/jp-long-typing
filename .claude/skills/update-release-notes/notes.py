@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """update-release-notes の取得・訳・埋め込み・確認（TODO-031、TODO-032）。
 
-  notes.py run [--by claude|google] WORK.json        fetch → translate → apply → check を続けて行う
+  notes.py run [--by claude|google] WORK.json        fetch → translate → apply → nhk → check を続けて行う
   notes.py fetch WORK.json                           新しい 3 日分・3 版・3 件を取得して WORK.json に書く
   notes.py translate [--by claude|google] WORK.json  changed / new の en を訳して ja に書く（既定は claude）
   notes.py apply WORK.json                           WORK.json の訳を index.html に埋め込む
+  notes.py nhk                                       NHK ニュースの最新 6 件を FALLBACK_NHK_NEWS に埋め込む（訳さない）
   notes.py check                                     index.html を配信して Playwright で確かめる
 """
 import argparse
@@ -28,6 +29,8 @@ CODE_URL = 'https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGE
 PLAYWRIGHT = '/home/ytani/.local/lib/playwright/node_modules/playwright/index.mjs'
 CACHY_RSS = 'https://cachyos.org/rss.xml'
 CACHY_POST = 'https://raw.githubusercontent.com/CachyOS/website/master/src/content/post/%s.md'
+NHK_RSS = 'https://www.nhk.or.jp/rss/news/cat0.xml'
+NHK_CONST = 'FALLBACK_NHK_NEWS'  # 訳さないので CONSTS には入れない（TODO-039）
 CONSTS = {'notes': 'CLAUDE_NOTES', 'code': 'CLAUDE_CODE_JA', 'cachy': 'CACHYOS_JA'}
 EN_CONST = 'CACHYOS_EN'  # cachy の英語版。訳す対象ではないので CONSTS に入れない（TODO-037）
 # ログとコミットメッセージで使う、人向けの名前
@@ -231,6 +234,46 @@ def translate(work, by):
     print(f'{work} に訳を書いた')
 
 
+def parse_nhk():
+    """RSS の新しい 6 件。整形は index.html の fetchNhkNews に揃える（TODO-010、TODO-039）。読めなければ ValueError。"""
+    try:
+        items = list(ET.fromstring(get(NHK_RSS)).iter('item'))[:6]
+    except ET.ParseError as x:
+        raise ValueError(f'RSS が XML として読めない: {x}')
+    if len(items) != 6:
+        raise ValueError(f'item が {len(items)} 件（6 件のはず。書式が変わったかも）')
+    out = []
+    for it in items:
+        title = (it.findtext('title') or '').strip()
+        desc = re.sub(r'<[^>]*>', '', it.findtext('description') or '').replace('&hellip;', '…').replace('...', '…').strip()
+        if not title:
+            raise ValueError('title が空の item がある（書式が変わったかも）')
+        # 要約は 100 字前後で「…」と切れる。最後の「。」まで残し、「。」が無ければ見出しだけにする
+        if desc.endswith('…'):
+            desc = desc[:desc.rfind('。') + 1]
+        out.append({'title': title, 'author': 'NHKニュース', 'text': f'{title}。\n{desc}' if desc else f'{title}。'})
+    return out
+
+
+def nhk():
+    """FALLBACK_NHK_NEWS を最新 6 件にする。変わったら True。取れなければ更新せず False（TODO-039）。"""
+    try:
+        entries = parse_nhk()
+    except (subprocess.CalledProcessError, ValueError) as x:
+        why = f'取得に失敗 {x.cmd[-1]}' if isinstance(x, subprocess.CalledProcessError) else x
+        print(f'{NHK_CONST}（NHK ニュース）: 取得できず更新しなかった。前の内容のまま残す（理由: {why}）')
+        return False
+    src = INDEX.read_text(encoding='utf-8')
+    m = block(src, NHK_CONST)
+    new = dump(entries)
+    if m.group(1) == new:
+        print(f'{NHK_CONST}: 変更なし')
+        return False
+    INDEX.write_text(src[:m.start(1)] + new + src[m.end(1):], encoding='utf-8')
+    print(f'{NHK_CONST}: 最新 {len(entries)} 件に更新した')
+    return True
+
+
 def dump(entries):
     return '[\n' + ',\n'.join(
         '      {\n' + ',\n'.join(f'        {json.dumps(k)}: {json.dumps(v, ensure_ascii=False)}' for k, v in o.items())
@@ -350,17 +393,21 @@ def check():
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser(usage=__doc__)
-    ap.add_argument('cmd', choices=['run', 'fetch', 'translate', 'apply', 'check'])
+    ap.add_argument('cmd', choices=['run', 'fetch', 'translate', 'apply', 'nhk', 'check'])
     ap.add_argument('--by', choices=['claude', 'google'], default='claude')
     ap.add_argument('work', nargs='?')
     a = ap.parse_args()
-    if (a.work is None) != (a.cmd == 'check'):
-        ap.error('check 以外は WORK.json を 1 つ渡す' if a.work is None else 'check は WORK.json を取らない')
+    if (a.work is None) != (a.cmd in ('check', 'nhk')):
+        ap.error('check・nhk 以外は WORK.json を 1 つ渡す' if a.work is None else 'check・nhk は WORK.json を取らない')
     if a.cmd == 'run':
-        if fetch(a.work):
+        todo = fetch(a.work)
+        if todo:
             translate(a.work, a.by)
             apply(a.work)
+        if nhk() or todo:
             check()
+    elif a.cmd == 'nhk':
+        nhk()
     elif a.cmd == 'translate':
         translate(a.work, a.by)
     elif a.cmd == 'fetch':
