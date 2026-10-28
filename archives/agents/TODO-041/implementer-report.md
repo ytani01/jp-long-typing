@@ -52,3 +52,17 @@
 - `FALLBACK_CLAUDE_CODE` の名前は「取得できないとき用」でなくなったが、const 名は変えない指示のためそのまま（コメントは書き直した）
 - GitHub API は認証なしで 1 時間 60 回まで。3 時間ごとなら足りる
 - 本物の `update-notes.sh` は流していない。本物の origin へは push していない
+
+## 直し（利用者の答えに沿って）
+
+- NHK: まとめの行の下に、記事ごとの行 `・見出し (10/28 23:50)` を足した（`index.html` の `applyNewsData`、値は `news-N`、RSS の順）。選ぶとその記事（見出し＋要約）だけが練習文になる。日時が無いデータは日時を付けない（`atLabel`）
+- Claude Platform: 選択欄の行から日時を外した（`・2026年10月23日の更新`）。データの `pubDate` は残してある（選択欄では使わない）
+- 「ニュース更新」ボタンの削除は、そのまま
+- `notes.py check`: Platform は日時なしの行、NHK は記事ごとの行を RSS の順に日時つきで突き合わせ、`news-0` を選んで本文が出ることも見る
+- 文書: `README.md`、`docs/update-release-notes.md` の NHK・Platform の記述と check の項目を直した
+
+### 確かめた結果
+
+- `notes.py check`: `OK`（rc=0）
+- Playwright（`archives/agents/TODO-041/check-nhk-rows.mjs`）: NHK の行は `news-summary  📰 NHK主要ニュースまとめ (6本・10/29 01:44)` の下に `news-0`〜`news-5` が `・【地震情報】千葉県北東部で震度5弱 津波の心配なし (10/29 01:00)` のように並ぶ。`claude-0` は `・2026年10月23日の更新`。`news-2` を選ぶと、その記事の本文が出て、ほかの記事の本文・まとめの印（【ニュース1】）は出ない。JS の例外 0、ダイアログ 0
+- 足した検証が、外すと落ちること: 記事ごとの行を作る `appendChild` を無効にすると、`check` が落ちる（node の例外で異常終了）

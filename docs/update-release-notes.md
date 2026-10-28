@@ -80,7 +80,7 @@ flowchart LR
 | 種類 | 取得元 |
 |---|---|
 | NHK ニュース・CachyOS ブログ | RSS の `pubDate`（時差の無い日時は日本時間、`-0000` は UTC） |
-| Claude Platform リリースノート | 見出しの日付（時刻は無いので日付だけ。選択欄も日付だけ） |
+| Claude Platform リリースノート | 見出しの日付（時刻は無い。選択欄の行は名前に日付が入っているので、日時を付けない） |
 | Claude Code（日本語・英語） | GitHub のリリース日時（`api.github.com/repos/anthropics/claude-code/releases` の `published_at`。認証なしで 1 時間に 60 回まで） |
 
 読めない・取れないときは、前に埋め込んだ同じ記事の日時、それも無ければ取得した日時にする。
@@ -99,10 +99,10 @@ GitHub のリリース日時が取れなかったときは、ログに `GitHub �
 ### check で確かめること
 
 - コンソールにエラーが無い。ブラウザが `127.0.0.1` の外へ通信していない（TODO-041）
-- 練習文の選択欄に「・YYYY年M月D日の更新 (M/D)」が 3 つ並ぶ。末尾の日時は、埋め込んだ `pubDate` を日本時間にしたもの（読めないものは出さない）
+- 練習文の選択欄に「・YYYY年M月D日の更新」が 3 つ並ぶ（日時は付けない）。Claude Code・CachyOS・NHK の記事ごとの行の末尾の日時は、埋め込んだ `pubDate` を日本時間にしたもの（読めないものは出さない）
 - 「・Claude Code 2.1.xxx（英語） (M/D hh:mm)」の後に「・Claude Code 2.1.xxx（日本語） (M/D hh:mm)」が 3 つ並び、選ぶと本文が出る
 - 「🐧 CachyOS」の欄に、英語 3 件と「（日本語）」3 件が並び、英語と日本語を 1 件ずつ選ぶと本文の全部が出る
-- 「📰 NHK主要ニュースまとめ (N本・M/D hh:mm)」の行が、`FALLBACK_NHK_NEWS` の一番新しい `pubDate` と合う
+- 「📰 NHK主要ニュースまとめ (N本・M/D hh:mm)」の行が、`FALLBACK_NHK_NEWS` の一番新しい `pubDate` と合い、その下に「・見出し (M/D hh:mm)」が RSS の順に並び、1 つ選ぶと本文が出る
 - 「Claudeニュースまとめ」を選ぶと、3 日分が `【タイトル】本文` の形で出る（CHANGELOG は含まない）
 
 ## cron で 3 時間ごとに流す

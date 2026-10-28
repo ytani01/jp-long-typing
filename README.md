@@ -17,14 +17,14 @@ https://github.com/user-attachments/assets/6a59d1eb-0fea-4e91-b951-f491ec981455
   - 文節や句読点ごとにスムーズに入力確定が可能。
 - **ニュースの埋め込み**:
   - ブラウザでは何も取得しない。ニュース・リリースノート・CHANGELOG・ブログは、cron が 3 時間ごとに `update-notes.sh` で取得して `index.html` に埋め込み、commit・push する。手でも `/update-release-notes` で更新できる（使い方は [docs/update-release-notes.md](docs/update-release-notes.md)）。
-  - 練習文の選択欄の各行の末尾に、配信日時を日本時間で出す（例: `・Claude Code 2.1.312（英語） (10/28 05:24)`）。Claude Platform リリースノートは日付だけ。配信日時が取れなかったものは、取得した日時になる。日時が無いデータでは出さない。
+  - 練習文の選択欄の各行の末尾に、配信日時を日本時間で出す（例: `・Claude Code 2.1.312（英語） (10/28 05:24)`）。Claude Platform リリースノートは名前に日付が入っているので付けない。配信日時が取れなかったものは、取得した日時になる。日時が無いデータでは出さない。
   - [Claude Code の CHANGELOG](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md) は、最新版の先頭 8 項目の英語（`FALLBACK_CLAUDE_CODE`）と、最新 3 版の日本語訳（「Claudeニュースまとめ」には含めない）を埋め込む。版の日時は GitHub のリリース日時。
   - [Claude Platform リリースノート](https://platform.claude.com/docs/en/release-notes/overview)の新しい 3 日分は、日本語に訳して埋め込む。
   - [CachyOS のブログ](https://cachyos.org/blog/)の最新 3 件は、英語の本文と日本語訳を埋め込む（選択欄の「🐧 CachyOS」）。
   - Markdown のリンク・コード・強調の記法は外して練習文にする。
 - **NHKニュース**:
-  - 最新 6 件を `FALLBACK_NHK_NEWS` に埋め込む（`update-notes.sh`、訳さない）。主要ニュース（最大 6 本）を 1 つのまとめにして練習できる。
-  - 選択欄のまとめの行に、最新記事の配信日時を日本時間で出す（例: `📰 NHK主要ニュースまとめ (6本・10/28 22:22)`）。日時が読めないときは出さない。
+  - 最新 6 件を `FALLBACK_NHK_NEWS` に埋め込む（`update-notes.sh`、訳さない）。主要ニュース（最大 6 本）を 1 つのまとめにして練習できるほか、まとめの下の行から記事を 1 本ずつも練習できる。
+  - 選択欄のまとめの行に最新記事の配信日時（例: `📰 NHK主要ニュースまとめ (6本・10/28 22:22)`）、記事ごとの行にその記事の配信日時（例: `・スペイン 列車どうしの衝突事故… (10/28 23:50)`）を日本時間で出す。日時が読めないときは出さない。
   - RSS の要約は 100 字前後で「…」と切れるので、最後の「。」まで残す。「。」が無い要約は外し、見出しだけにする。
 - **時間制限モード（30秒 / 1分 / 3分 / 5分 / 無制限）**:
   - 残り時間のカウントダウン表示に対応（残り10秒未満で警告色表示）。

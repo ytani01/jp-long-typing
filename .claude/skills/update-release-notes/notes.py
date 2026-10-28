@@ -405,7 +405,8 @@ if (code.length !== 3) fails.push(`CLAUDE_CODE_JA が ${code.length} 件（3 件
 if (codeEn.length !== 1) fails.push(`FALLBACK_CLAUDE_CODE が ${codeEn.length} 件（1 件のはず）`);
 const nDays = vals.filter(v => /^claude-\d+$/.test(v)).length, nJa = vals.filter(v => /^code-ja-/.test(v)).length;
 if (nDays !== 3 || nJa !== 3) fails.push(`選択欄の日付が ${nDays} 個、（日本語）が ${nJa} 個（3 個ずつのはず）`);
-notes.forEach((n, i) => { if (!opts.some(o => o[0] === `claude-${i}` && o[1] === lab(n))) fails.push(`選択欄に ${lab(n)} が無い`); });
+// Claude Platform は名前に日付が入っているので、日時を付けない
+notes.forEach((n, i) => { if (!opts.some(o => o[0] === `claude-${i}` && o[1] === `・${n.title}`)) fails.push(`選択欄に ・${n.title} が無い`); });
 const at = vals.indexOf('claude-code');
 if (opts[at][1] !== lab(codeEn[0], '（英語）')) fails.push(`（英語）の行が ${lab(codeEn[0], '（英語）')} でない: ${opts[at][1]}`);
 code.forEach((c, i) => { const o = opts[at + 1 + i]; if (!o || o[0] !== `code-ja-${i}` || o[1] !== lab(c)) fails.push(`（英語）の後の ${i + 1} 番目が ${lab(c)} でない`); });
@@ -418,10 +419,14 @@ const ts = nhk.map(a => Date.parse(a.pubDate)).filter(Number.isFinite);
 const nhkWant = `📰 NHK主要ニュースまとめ (${nhk.length}本${ts.length ? `・${fmt(new Date(Math.max(...ts)).toISOString())}` : ''})`;
 const nhkGot = opts.find(o => o[0] === 'news-summary')[1];
 if (nhkGot !== nhkWant) fails.push(`NHK のまとめの行が ${nhkWant} でない: ${nhkGot}`);
+// まとめの下に、記事ごとの行が RSS の順に並ぶ
+const ni = opts.findIndex(o => o[0] === 'news-summary');
+const nhkRows = JSON.stringify(opts.slice(ni + 1, ni + 1 + nhk.length)), nhkRowsWant = JSON.stringify(nhk.map((a, i) => [`news-${i}`, lab(a)]));
+if (nhkRows !== nhkRowsWant) fails.push(`NHK の記事ごとの行が違う: ${nhkRows}`);
 const shown = async v => { await p.selectOption('#preset-select', v); await p.waitForTimeout(500); return strip(await p.evaluate(() => document.body.innerText)); };
 let t = await shown('code-ja-0');
 if (!t.includes(strip(code[0].text.split('\n')[0]))) fails.push(`${code[0].title} を選んでも訳が出ない`);
-for (const [v, a] of [['claude-code', codeEn[0]], ['cachy-en-0', cachyEn[0]], ['cachy-ja-0', cachyJa[0]]]) {
+for (const [v, a] of [['news-0', nhk[0]], ['claude-code', codeEn[0]], ['cachy-en-0', cachyEn[0]], ['cachy-ja-0', cachyJa[0]]]) {
   t = await shown(v);
   if (!a || !t.includes(strip(a.text))) fails.push(`${v} を選んでも本文が出ない`);
 }

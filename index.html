@@ -1466,6 +1466,8 @@
             }
           } else if (val === 'news-summary') {
             this.loadNewsSummary();
+          } else if (val.startsWith('news-')) {
+            this.loadArticle(this.newsArticles[parseInt(val.replace('news-', ''), 10)]);
           } else {
             const idx = parseInt(val, 10);
             this.currentArticleIndex = idx;
@@ -1602,7 +1604,7 @@
         const prevValue = this.dom.presetSelect.value;
         this.dom.optgroupClaude.innerHTML = '';
         const opts = [['claude-summary', `🤖 Claudeニュースまとめ (${notes.length}本)`]];
-        notes.forEach((art, i) => opts.push([`claude-${i}`, `・${art.title}${atLabel(art)}`]));
+        notes.forEach((art, i) => opts.push([`claude-${i}`, `・${art.title}`]));
         opts.push(['claude-code', `・${code.title}（英語）${atLabel(code)}`]);
         CLAUDE_CODE_JA.forEach((art, i) => opts.push([`code-ja-${i}`, `・${art.title}${atLabel(art)}`]));
         for (const [value, label] of opts) {
@@ -1638,13 +1640,19 @@
         this.isSummary = true;
       }
 
-      // 個別の記事は短いので、選択欄にはまとめだけを置く（TODO-010）
+      // 選択欄には、まとめの下に記事ごとの行を置く（TODO-010 でまとめだけにしたが、TODO-041 で戻した）
       applyNewsData(articles) {
         this.newsArticles = articles;
         // 最新記事の配信日時を日本時間で添える。読めるものが無ければ付けない（TODO-040）
         const t = Math.max(...articles.map(a => Date.parse(a.pubDate)).filter(Number.isFinite));
         const at = Number.isFinite(t) ? `・${formatAt(new Date(t).toISOString())}` : '';
         this.dom.optgroupNews.querySelector('option[value="news-summary"]').textContent = `📰 NHK主要ニュースまとめ (${articles.length}本${at})`;
+        articles.forEach((art, i) => {
+          const opt = document.createElement('option');
+          opt.value = `news-${i}`;
+          opt.textContent = `・${art.title}${atLabel(art)}`;
+          this.dom.optgroupNews.appendChild(opt);
+        });
       }
 
       loadNewsSummary() {
