@@ -19,6 +19,8 @@ import time
 import urllib.parse
 import sys
 import xml.etree.ElementTree as ET
+from datetime import timedelta, timezone
+from email.utils import parsedate_to_datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -30,6 +32,7 @@ PLAYWRIGHT = '/home/ytani/.local/lib/playwright/node_modules/playwright/index.mj
 CACHY_RSS = 'https://cachyos.org/rss.xml'
 CACHY_POST = 'https://raw.githubusercontent.com/CachyOS/website/master/src/content/post/%s.md'
 NHK_RSS = 'https://www.nhk.or.jp/rss/news/cat0.xml'
+JST = timezone(timedelta(hours=9))
 NHK_CONST = 'FALLBACK_NHK_NEWS'  # 訳さないので CONSTS には入れない（TODO-039）
 CONSTS = {'notes': 'CLAUDE_NOTES', 'code': 'CLAUDE_CODE_JA', 'cachy': 'CACHYOS_JA'}
 EN_CONST = 'CACHYOS_EN'  # cachy の英語版。訳す対象ではないので CONSTS に入れない（TODO-037）
@@ -256,7 +259,12 @@ def parse_nhk():
         # 要約は 100 字前後で「…」と切れる。最後の「。」まで残し、「。」が無ければ見出しだけにする
         if desc.endswith('…'):
             desc = desc[:desc.rfind('。') + 1]
-        out.append({'title': title, 'author': 'NHKニュース', 'text': f'{title}。\n{desc}' if desc else f'{title}。'})
+        # 配信日時は日本時間の ISO 8601。index.html が一番新しいものをまとめの行に出す（TODO-040）。読めなければ ''
+        try:
+            at = parsedate_to_datetime(it.findtext('pubDate') or '').astimezone(JST).isoformat()
+        except (TypeError, ValueError):
+            at = ''
+        out.append({'title': title, 'author': 'NHKニュース', 'text': f'{title}。\n{desc}' if desc else f'{title}。', 'pubDate': at})
     return out
 
 

@@ -14,7 +14,7 @@ Claude Code の CHANGELOG は英語版をブラウザで取得するが、日本
 
 CachyOS ブログ（RSS の最新 3 件）は、本文を英語のまま `CACHYOS_EN`、訳を `CACHYOS_JA` に埋め込む（TODO-037）。
 
-内蔵の NHK ニュース（RSS の最新 6 件）は、訳さずに `FALLBACK_NHK_NEWS` へ埋め込む。`run` が一緒に更新する。単独では `notes.py nhk`（TODO-039）。
+内蔵の NHK ニュース（RSS の最新 6 件）は、訳さずに、配信日時（`pubDate`）と一緒に `FALLBACK_NHK_NEWS` へ埋め込む。`run` が一緒に更新する。単独では `notes.py nhk`（TODO-039）。
 
 訳と埋め込みだけの定期のデータ更新なので、TODO 項目は立てず、確認の
 担当も分けない。`run` の中の `check` の結果を main が見てコミットする。

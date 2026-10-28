@@ -922,32 +922,38 @@
       {
         "title": "スペイン 列車どうしの衝突事故“これまでに64人死亡”",
         "author": "NHKニュース",
-        "text": "スペイン 列車どうしの衝突事故“これまでに64人死亡”。\nスペインで28日、首都マドリードと南部の地域を結ぶ高速鉄道の路線で列車どうしが衝突する事故があり、ロイター通信はこれまでに64人が死亡したと伝えています。"
+        "text": "スペイン 列車どうしの衝突事故“これまでに64人死亡”。\nスペインで28日、首都マドリードと南部の地域を結ぶ高速鉄道の路線で列車どうしが衝突する事故があり、ロイター通信はこれまでに64人が死亡したと伝えています。",
+        "pubDate": "2026-10-28T20:53:00+09:00"
       },
       {
         "title": "日本サッカー協会 岡田武史氏が副会長を辞任 W杯対応めぐり",
         "author": "NHKニュース",
-        "text": "日本サッカー協会 岡田武史氏が副会長を辞任 W杯対応めぐり。\n日本サッカー協会は、元日本代表監督の岡田武史副会長が、今回のワールドカップをめぐる一連の対応について、自身の信条との間に大きな隔たりがあるなどとして、副会長を辞任したと発表しました。"
+        "text": "日本サッカー協会 岡田武史氏が副会長を辞任 W杯対応めぐり。\n日本サッカー協会は、元日本代表監督の岡田武史副会長が、今回のワールドカップをめぐる一連の対応について、自身の信条との間に大きな隔たりがあるなどとして、副会長を辞任したと発表しました。",
+        "pubDate": "2026-10-28T18:15:00+09:00"
       },
       {
         "title": "武部農相 二重計上「担当者の誤解」陳謝も“裏金”否定",
         "author": "NHKニュース",
-        "text": "武部農相 二重計上「担当者の誤解」陳謝も“裏金”否定。"
+        "text": "武部農相 二重計上「担当者の誤解」陳謝も“裏金”否定。",
+        "pubDate": "2026-10-28T22:14:55+09:00"
       },
       {
         "title": "日本航空 予約システムに不正アクセス 9万人超の情報漏えいか",
         "author": "NHKニュース",
-        "text": "日本航空 予約システムに不正アクセス 9万人超の情報漏えいか。\n日本航空は、航空券の予約や発券などを行うシステムが不正アクセスを受け、およそ9万2000人の乗客の氏名や予約に関する情報が漏えいしたおそれがあると発表しました。"
+        "text": "日本航空 予約システムに不正アクセス 9万人超の情報漏えいか。\n日本航空は、航空券の予約や発券などを行うシステムが不正アクセスを受け、およそ9万2000人の乗客の氏名や予約に関する情報が漏えいしたおそれがあると発表しました。",
+        "pubDate": "2026-10-28T20:12:00+09:00"
       },
       {
         "title": "GMO“個人情報が掲載されたサイトのドメイン停止を確認”",
         "author": "NHKニュース",
-        "text": "GMO“個人情報が掲載されたサイトのドメイン停止を確認”。\nGMOインターネットグループのサービスが不正アクセスを受けている問題で、会社は、利用者に関すると見られる個人情報が掲載されていたサイトのドメインが停止されたことを確認したと発表しました。"
+        "text": "GMO“個人情報が掲載されたサイトのドメイン停止を確認”。\nGMOインターネットグループのサービスが不正アクセスを受けている問題で、会社は、利用者に関すると見られる個人情報が掲載されていたサイトのドメインが停止されたことを確認したと発表しました。",
+        "pubDate": "2026-10-28T20:59:49+09:00"
       },
       {
         "title": "北朝鮮IPアドレスから韓国金融機関に接触 440万件以上",
         "author": "NHKニュース",
-        "text": "北朝鮮IPアドレスから韓国金融機関に接触 440万件以上。\n金融機関などを狙ったサイバー攻撃が相次ぐ韓国で、北朝鮮のIPアドレスからアクセスを試みた形跡が合わせて440万件以上検知されたことが明らかになりました。"
+        "text": "北朝鮮IPアドレスから韓国金融機関に接触 440万件以上。\n金融機関などを狙ったサイバー攻撃が相次ぐ韓国で、北朝鮮のIPアドレスからアクセスを試みた形跡が合わせて440万件以上検知されたことが明らかになりました。",
+        "pubDate": "2026-10-28T22:22:06+09:00"
       }
     ];
 
@@ -1267,6 +1273,14 @@
       const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return res.text();
+    }
+
+    // rss2json の pubDate（"2026-10-28 13:22:06"、UTC と見なす）も RSS の書式（"... +0900"）も、ISO 8601 の文字列にする。読めなければ ''（TODO-040）
+    function toIsoDate(s) {
+      s = String(s || '').trim();
+      const m = /^(\d{4}-\d\d-\d\d) (\d\d:\d\d:\d\d)$/.exec(s);
+      const t = Date.parse(m ? `${m[1]}T${m[2]}Z` : s);
+      return Number.isFinite(t) ? new Date(t).toISOString() : '';
     }
 
     /* ========================================================
@@ -1645,7 +1659,8 @@
             return {
               title: cleanTitle,
               author: 'NHKニュース',
-              text: desc ? `${cleanTitle}。\n${desc}` : `${cleanTitle}。`
+              text: desc ? `${cleanTitle}。\n${desc}` : `${cleanTitle}。`,
+              pubDate: toIsoDate(item.pubDate)
             };
           });
           const untouched = this.isUntouchedSummary('news-summary');
@@ -1721,7 +1736,14 @@
       // 個別の記事は短いので、選択欄にはまとめだけを置く（TODO-010）
       applyNewsData(articles) {
         this.newsArticles = articles;
-        this.dom.optgroupNews.querySelector('option[value="news-summary"]').textContent = `📰 NHK主要ニュースまとめ (${articles.length}本)`;
+        // 最新記事の配信日時を日本時間で添える。読めるものが無ければ付けない（TODO-040）
+        const t = Math.max(...articles.map(a => Date.parse(a.pubDate)).filter(Number.isFinite));
+        let at = '';
+        if (Number.isFinite(t)) {
+          const j = new Date(t + 9 * 3600 * 1000), z = n => String(n).padStart(2, '0');
+          at = `・${j.getUTCMonth() + 1}/${j.getUTCDate()} ${z(j.getUTCHours())}:${z(j.getUTCMinutes())}`;
+        }
+        this.dom.optgroupNews.querySelector('option[value="news-summary"]').textContent = `📰 NHK主要ニュースまとめ (${articles.length}本${at})`;
       }
 
       loadNewsSummary() {

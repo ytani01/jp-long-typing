@@ -66,7 +66,7 @@ flowchart LR
 | `fetch 作業用.json` | 英語版を取得し、前回の英語（`last-source.json`）と比べて、日・版・記事ごとに `same` / `changed` / `new` を出す。全部 `same` なら「変更なし」で終える |
 | `translate [--by claude\|google] 作業用.json` | `changed` と `new` のものだけ、`en` の 1 項目を `ja` の 1 要素に訳す |
 | `apply 作業用.json` | `index.html` の `CLAUDE_NOTES` / `CLAUDE_CODE_JA` / `CACHYOS_JA` / `CACHYOS_EN` と日付のコメントを書き換え、`last-source.json` を今回の英語にする |
-| `nhk` | NHK の RSS（`cat0.xml`）の最新 6 件（1〜5 件の日はある分）で `FALLBACK_NHK_NEWS` を書き換える。整形はブラウザの `fetchNhkNews` と同じ。`run` は `apply` の後に自動で呼ぶ。取得・解析に失敗したら更新せず、`FALLBACK_NHK_NEWS（NHK ニュース）: 取得できず更新しなかった…` を出す |
+| `nhk` | NHK の RSS（`cat0.xml`）の最新 6 件（1〜5 件の日はある分）で `FALLBACK_NHK_NEWS` を書き換える。整形はブラウザの `fetchNhkNews` と同じ。各記事に配信日時 `pubDate`（日本時間の ISO 8601）も持たせ、選択欄のまとめの行に一番新しいものを出す（TODO-040）。`run` は `apply` の後に自動で呼ぶ。取得・解析に失敗したら更新せず、`FALLBACK_NHK_NEWS（NHK ニュース）: 取得できず更新しなかった…` を出す |
 | `check` | 空いているポートで `index.html` を配信し、Playwright で表示を確かめる。`OK` と出れば済み |
 
 ### 訳し方（`--by`）
