@@ -234,18 +234,23 @@ def translate(work, by):
     print(f'{work} に訳を書いた')
 
 
+def trim(s):
+    """前後の空白（全角も）を外す。JS の正規表現の空白は U+FEFF も数えるので、揃える。"""
+    return re.sub(r'^[\s\ufeff]+|[\s\ufeff]+$', '', s)
+
+
 def parse_nhk():
-    """RSS の新しい 6 件。整形は index.html の fetchNhkNews に揃える（TODO-010、TODO-039）。読めなければ ValueError。"""
+    """RSS の新しい最大 6 件。整形は index.html の fetchNhkNews に揃える（TODO-010、TODO-039）。読めなければ ValueError。"""
     try:
         items = list(ET.fromstring(get(NHK_RSS)).iter('item'))[:6]
     except ET.ParseError as x:
         raise ValueError(f'RSS が XML として読めない: {x}')
-    if len(items) != 6:
-        raise ValueError(f'item が {len(items)} 件（6 件のはず。書式が変わったかも）')
+    if not items:  # 1〜5 件の日は、fetchNhkNews と同じく、ある分だけ受け入れる
+        raise ValueError('item が 0 件（書式が変わったかも）')
     out = []
     for it in items:
-        title = (it.findtext('title') or '').strip()
-        desc = re.sub(r'<[^>]*>', '', it.findtext('description') or '').replace('&hellip;', '…').replace('...', '…').strip()
+        title = trim(it.findtext('title') or '')
+        desc = trim(re.sub(r'<[^>]*>', '', it.findtext('description') or '').replace('&hellip;', '…').replace('...', '…'))
         if not title:
             raise ValueError('title が空の item がある（書式が変わったかも）')
         # 要約は 100 字前後で「…」と切れる。最後の「。」まで残し、「。」が無ければ見出しだけにする
@@ -275,9 +280,11 @@ def nhk():
 
 
 def dump(entries):
-    return '[\n' + ',\n'.join(
+    out = '[\n' + ',\n'.join(
         '      {\n' + ',\n'.join(f'        {json.dumps(k)}: {json.dumps(v, ensure_ascii=False)}' for k, v in o.items())
         + '\n      }' for o in entries) + '\n    ]'
+    # 文字列に </script> があっても <script> が閉じないように（JSON では \/ は / と同じ）
+    return out.replace('</', '<\\/')
 
 
 def apply(work):

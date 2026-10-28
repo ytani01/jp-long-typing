@@ -53,18 +53,20 @@ notes.py run [--by claude|google] 作業用.json
 
 ```mermaid
 flowchart LR
-  A[fetch] -->|変更なし| Z[終える]
-  A -->|new / changed あり| C["translate（--by）"] --> D[apply] --> E[check]
+  A[fetch] -->|new / changed あり| C["translate（--by）"] --> D[apply] --> N[nhk]
+  A -->|変更なし| N
+  N -->|訳があった、または NHK が変わった| E[check]
+  N -->|どちらも無い| Z[終える]
 ```
 
-`run` は次の 4 段を続けて行う。各段はサブコマンドとして 1 つずつも流せる。
+`run` は次の 5 段を続けて行う（`fetch` が変更なしでも `nhk` は流れる）。各段はサブコマンドとして 1 つずつも流せる。
 
 | サブコマンド | すること |
 |---|---|
 | `fetch 作業用.json` | 英語版を取得し、前回の英語（`last-source.json`）と比べて、日・版・記事ごとに `same` / `changed` / `new` を出す。全部 `same` なら「変更なし」で終える |
 | `translate [--by claude\|google] 作業用.json` | `changed` と `new` のものだけ、`en` の 1 項目を `ja` の 1 要素に訳す |
 | `apply 作業用.json` | `index.html` の `CLAUDE_NOTES` / `CLAUDE_CODE_JA` / `CACHYOS_JA` / `CACHYOS_EN` と日付のコメントを書き換え、`last-source.json` を今回の英語にする |
-| `nhk` | NHK の RSS（`cat0.xml`）の最新 6 件で `FALLBACK_NHK_NEWS` を書き換える。整形はブラウザの `fetchNhkNews` と同じ。`run` は `apply` の後に自動で呼ぶ。取得・解析に失敗したら更新せず、`FALLBACK_NHK_NEWS（NHK ニュース）: 取得できず更新しなかった…` を出す |
+| `nhk` | NHK の RSS（`cat0.xml`）の最新 6 件（1〜5 件の日はある分）で `FALLBACK_NHK_NEWS` を書き換える。整形はブラウザの `fetchNhkNews` と同じ。`run` は `apply` の後に自動で呼ぶ。取得・解析に失敗したら更新せず、`FALLBACK_NHK_NEWS（NHK ニュース）: 取得できず更新しなかった…` を出す |
 | `check` | 空いているポートで `index.html` を配信し、Playwright で表示を確かめる。`OK` と出れば済み |
 
 ### 訳し方（`--by`）
@@ -144,7 +146,11 @@ same     CachyOS June 2026 Release（日本語）（70 項目）
 same     CachyOS April 2026 Release（日本語）（72 項目）
 CACHYOS_JA: 変更なし
 変更なし
+FALLBACK_NHK_NEWS: 変更なし
 ```
+
+`fetch` の最後の「変更なし」は訳の分だけの話で、その後に NHK の行（`最新 6 件に更新した` か `変更なし`）が続く。
+NHK はほぼ毎日変わるので、実際は `FALLBACK_NHK_NEWS: 最新 6 件に更新した` と `check` の `OK`、commit と push の行が続く日が多い。
 
 更新した日（`same` の行などは略。最後に commit と push の行が出る）:
 
@@ -184,8 +190,11 @@ Google 翻訳が落ちた日は、`Google 翻訳に失敗した（…）` と `c
 どの段も、失敗すると何も書かずにエラーで止まる。ただし `fetch` は、リリースノート・CHANGELOG・CachyOS のどれかが
 取れない・読めないときは、そのものだけ更新せず前の内容のまま残し、
 `<const 名>（<人向けの名前>）: 取得できず更新しなかった。前の内容のまま残す（理由: …）` を 1 行出す
-（人向けの名前は リリースノート / CHANGELOG / CachyOS ブログ / NHK ニュース）。
+（人向けの名前は リリースノート / CHANGELOG / CachyOS ブログ）。
 全部取れないときは終了コード 1 で止まる。取れなかったものは、`update-notes.sh` のコミットメッセージに入らない。
+`nhk` は取得・解析に失敗すると、`FALLBACK_NHK_NEWS（NHK ニュース）: 取得できず更新しなかった。前の内容のまま残す（理由: …）` を出して `index.html` に触れない（他の段は止めない）。
+RSS が 1〜5 件の日は、ブラウザと同じくある分だけ埋め込む（0 件は失敗）。
+
 `update-notes.sh` は、ログに「取得できず更新しなかった」の行があれば、取れた分の commit と push を済ませてから終了コード 1 で終わる
 （差分が無くて commit しないときも 1）。cron のログで気づける。`/update-release-notes` では、行が出たら利用者に知らせる
 
@@ -197,6 +206,10 @@ Google 翻訳が落ちた日は、`Google 翻訳に失敗した（…）` と `c
   ```bash
   git checkout index.html .claude/skills/update-release-notes/last-source.json
   ```
+
+`update-notes.sh` は、`run` が落ちた日（取得・訳・`check` の失敗）も、`index.html` と `last-source.json` を戻したあとで
+`notes.py nhk` と `check` だけを流し直し、NHK ニュースの更新があれば commit・push する（TODO-039）。
+そのときのコミットメッセージは `NHK ニュースを …` だけ。終了コードは 1 のまま。流し直した `check` が落ちたら、NHK も戻す。
 
 ## 終わったら
 
