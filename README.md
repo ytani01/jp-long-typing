@@ -15,16 +15,15 @@ https://github.com/user-attachments/assets/6a59d1eb-0fea-4e91-b951-f491ec981455
 - **実践的な日本語入力・変換対応**:
   - 入力・変換・確定をくり返して長文を打ち進める、実務・執筆に即した実践スタイル。
   - 文節や句読点ごとにスムーズに入力確定が可能。
-- **Claudeニュース自動取得機能**:
-  - 起動時と「ニュース更新」で、[Claude Code の CHANGELOG](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md) の最新版の先頭 8 項目（英語）を取得。取得できないときは内蔵のデータを使う。
-  - [Claude Platform リリースノート](https://platform.claude.com/docs/en/release-notes/overview)の新しい 3 日分は、日本語に訳して `index.html` に埋め込んである。CORS を許していないのでブラウザでは取得しない。更新はスクリプトか Claude Code の `/update-release-notes` で行う（使い方は [docs/update-release-notes.md](docs/update-release-notes.md)）。
-  - CHANGELOG の最新 3 版の先頭 8 項目は、日本語に訳して `index.html` に埋め込んである（「Claudeニュースまとめ」には含めない）。更新はリリースノートと同じく `/update-release-notes` で行う。
-  - [CachyOS のブログ](https://cachyos.org/blog/)の最新 3 件は、英語の本文と日本語訳を `index.html` に埋め込んである（練習文の選択欄の「🐧 CachyOS」）。更新は `/update-release-notes` で行う。
+- **ニュースの埋め込み**:
+  - ブラウザでは何も取得しない。ニュース・リリースノート・CHANGELOG・ブログは、cron が 3 時間ごとに `update-notes.sh` で取得して `index.html` に埋め込み、commit・push する。手でも `/update-release-notes` で更新できる（使い方は [docs/update-release-notes.md](docs/update-release-notes.md)）。
+  - 練習文の選択欄の各行の末尾に、配信日時を日本時間で出す（例: `・Claude Code 2.1.312（英語） (10/28 05:24)`）。Claude Platform リリースノートは日付だけ。配信日時が取れなかったものは、取得した日時になる。日時が無いデータでは出さない。
+  - [Claude Code の CHANGELOG](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md) は、最新版の先頭 8 項目の英語（`FALLBACK_CLAUDE_CODE`）と、最新 3 版の日本語訳（「Claudeニュースまとめ」には含めない）を埋め込む。版の日時は GitHub のリリース日時。
+  - [Claude Platform リリースノート](https://platform.claude.com/docs/en/release-notes/overview)の新しい 3 日分は、日本語に訳して埋め込む。
+  - [CachyOS のブログ](https://cachyos.org/blog/)の最新 3 件は、英語の本文と日本語訳を埋め込む（選択欄の「🐧 CachyOS」）。
   - Markdown のリンク・コード・強調の記法は外して練習文にする。
-- **NHKニュース自動取得機能**:
-  - オンライン起動時に最新のNHKニュースRSSフィードを自動取得。
-  - 取得できないときの内蔵のニュース（`FALLBACK_NHK_NEWS`）は、`/update-release-notes`（`update-notes.sh`）が最新 6 件に書き換える。
-  - 主要ニュース（最大 6 本）を 1 つのまとめにして練習できる（オフライン・障害時の自動キャッシュフォールバック対応）。
+- **NHKニュース**:
+  - 最新 6 件を `FALLBACK_NHK_NEWS` に埋め込む（`update-notes.sh`、訳さない）。主要ニュース（最大 6 本）を 1 つのまとめにして練習できる。
   - 選択欄のまとめの行に、最新記事の配信日時を日本時間で出す（例: `📰 NHK主要ニュースまとめ (6本・10/28 22:22)`）。日時が読めないときは出さない。
   - RSS の要約は 100 字前後で「…」と切れるので、最後の「。」まで残す。「。」が無い要約は外し、見出しだけにする。
 - **時間制限モード（30秒 / 1分 / 3分 / 5分 / 無制限）**:
@@ -74,3 +73,16 @@ xdg-open index.html
 # ローカルサーバーで開く場合
 python3 -m http.server 8080
 ```
+
+## cron の更新と開発（TODO-041）
+
+cron の `update-notes.sh` は、作業中のコミットを push しないよう、始める前に `git fetch` して origin/master と比べる。
+master でない・未 push のコミットがある・origin と分岐している、のどれかなら、ログに理由を残して何もせず終わる。遅れているときだけ `git merge --ff-only` で取り込む。push は自分が作った commit の SHA だけを送る。
+つまり、開発は cron を流すマシンでしてよいが、**commit したら push して、cron が動ける状態に戻す**。
+
+- Claude Code でこのリポジトリを開くと、`.claude/settings.json` の SessionStart hook が fetch して、遅れていれば「先に pull」、未 push があれば「cron は見送り中」と知らせる
+- commit 時に origin より遅れていれば警告する pre-commit hook は `githooks/` にある（警告だけで、commit は止めない）。clone ごとに一度だけ、有効にする
+
+  ```bash
+  git config core.hooksPath githooks
+  ```

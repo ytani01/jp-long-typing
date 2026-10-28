@@ -2,9 +2,9 @@
 
 `index.html` には、Claude Platform リリースノートの新しい 3 日分（`CLAUDE_NOTES`）と、
 Claude Code の CHANGELOG の最新 3 版（`CLAUDE_CODE_JA`）と、CachyOS ブログの最新 3 件（`CACHYOS_JA`）を、日本語に訳して埋め込んである。
-CachyOS は英語の本文もそのまま埋め込む（`CACHYOS_EN`）。
-これとは別に、内蔵の NHK ニュース（`FALLBACK_NHK_NEWS`）も RSS の最新 6 件に書き換える。訳さない（TODO-039）。
-リリースノートは CORS を許していないのでブラウザでは取得できず、CHANGELOG には日本語版が無い。
+英語の本文もそのまま埋め込む（CachyOS は `CACHYOS_EN`、Claude Code は最新版の先頭 8 項目を `FALLBACK_CLAUDE_CODE`。TODO-041）。
+これとは別に、NHK ニュース（`FALLBACK_NHK_NEWS`）も RSS の最新 6 件に書き換える。訳さない（TODO-039）。
+ブラウザでは何も取得しない（rss2json は Cloudflare に止められ、リリースノートは CORS を許さず、CHANGELOG には日本語版が無い。TODO-041）。
 そこで `.claude/skills/update-release-notes/notes.py` で取得・訳・埋め込み・確認を行い、
 コミットと push で反映する。
 
@@ -28,12 +28,15 @@ ln -s ~/work/jp-long-typing/.claude/skills/update-release-notes/notes.py ~/bin/u
 変わっていたら `index.html` と `last-source.json` を「終わったら」のメッセージで commit して push する。
 「変更なし」のときは commit しない。`run` が落ちた日は、NHK ニュースの分だけ commit する（下の「失敗したとき」）。
 
+- 始める前に `git fetch` し、master でない・origin より先に進んでいる（未 push の commit がある）・分岐している、のどれかなら、
+  ログに理由（`見送り: …`）を出し、何もせず終了コード 0 で終わる。origin より遅れていれば `git merge --ff-only` で取り込む。
+  fetch できなかったときは終了コード 1（TODO-041）
 - 始める前に `index.html` か `last-source.json` に commit していない変更があると、何もせずに止まる。
   `notes.py run` で `check` が落ちた後に流すときも、先に「失敗したとき」の手順で戻す
 - `run` が落ちたとき（translate でも check でも）は、`index.html` と `last-source.json` を HEAD に戻す。
   `google,claude` のように `,` で並べてあれば次の訳し方で流し直し、最後のものも落ちたら、NHK ニュースだけを更新して commit・push し、終了コード 1 で終わる
-- push は `git push` をそのまま流すので、ほかに push していない commit があれば一緒に送られる。
-  push だけ落ちたときは、流し直さずに `git push` を手で流す（流し直すと「変更なし」で終わり、push されない）
+- push は自分が作った commit の SHA だけを送る（`git push origin <SHA>:refs/heads/master`。HEAD や master はそのまま送らない）。
+  push だけ落ちたときは、commit が手元に残って「未 push」になり、次からは見送られる。`git push` を手で流す（TODO-041）
 
 ```bash
 ./update-notes.sh          # claude で訳す
@@ -53,21 +56,35 @@ notes.py run [--by claude|google] 作業用.json
 
 ```mermaid
 flowchart LR
-  A[fetch] -->|new / changed あり| C["translate（--by）"] --> D[apply] --> N[nhk]
-  A -->|変更なし| N
-  N -->|訳があった、または NHK が変わった| E[check]
-  N -->|どちらも無い| Z[終える]
+  A[fetch] -->|new / changed あり| C["translate（--by）"] --> D[apply]
+  A -->|変更なし| D
+  D --> N[nhk]
+  N -->|apply か nhk が index.html を変えた| E[check]
+  N -->|どちらも変えていない| Z[終える]
 ```
 
-`run` は次の 5 段を続けて行う（`fetch` が変更なしでも `nhk` は流れる）。各段はサブコマンドとして 1 つずつも流せる。
+`run` は次の 5 段を続けて行う（`fetch` が変更なしでも `apply`（配信日時・英語版）と `nhk` は流れる）。各段はサブコマンドとして 1 つずつも流せる。
 
 | サブコマンド | すること |
 |---|---|
-| `fetch 作業用.json` | 英語版を取得し、前回の英語（`last-source.json`）と比べて、日・版・記事ごとに `same` / `changed` / `new` を出す。全部 `same` なら「変更なし」で終える |
+| `fetch 作業用.json` | 英語版と配信日時を取得し、前回の英語（`last-source.json`）と比べて、日・版・記事ごとに `same` / `changed` / `new` を出す。英語も日時も前と同じなら、その種類は「変更なし」 |
 | `translate [--by claude\|google] 作業用.json` | `changed` と `new` のものだけ、`en` の 1 項目を `ja` の 1 要素に訳す |
-| `apply 作業用.json` | `index.html` の `CLAUDE_NOTES` / `CLAUDE_CODE_JA` / `CACHYOS_JA` / `CACHYOS_EN` と日付のコメントを書き換え、`last-source.json` を今回の英語にする |
-| `nhk` | NHK の RSS（`cat0.xml`）の最新 6 件（1〜5 件の日はある分）で `FALLBACK_NHK_NEWS` を書き換える。整形はブラウザの `fetchNhkNews` と同じ。各記事に配信日時 `pubDate`（日本時間の ISO 8601）も持たせ、選択欄のまとめの行に一番新しいものを出す（TODO-040）。`run` は `apply` の後に自動で呼ぶ。取得・解析に失敗したら更新せず、`FALLBACK_NHK_NEWS（NHK ニュース）: 取得できず更新しなかった…` を出す |
+| `apply 作業用.json` | `index.html` の `CLAUDE_NOTES` / `CLAUDE_CODE_JA` / `FALLBACK_CLAUDE_CODE` / `CACHYOS_JA` / `CACHYOS_EN`（と各記事の `pubDate`）と日付のコメントを書き換え、`last-source.json` を今回の英語にする。訳が無い日も流れ、変わったときだけ `check` に進む |
+| `nhk` | NHK の RSS（`cat0.xml`）の最新 6 件（1〜5 件の日はある分）で `FALLBACK_NHK_NEWS` を書き換える。各記事に配信日時 `pubDate`（日本時間の ISO 8601）も持たせ、選択欄のまとめの行に一番新しいものを出す（TODO-040）。`run` は `apply` の後に自動で呼ぶ。取得・解析に失敗したら更新せず、`FALLBACK_NHK_NEWS（NHK ニュース）: 取得できず更新しなかった…` を出す |
 | `check` | 空いているポートで `index.html` を配信し、Playwright で表示を確かめる。`OK` と出れば済み |
+
+### 配信日時（`pubDate`）の取り方（TODO-041）
+
+選択欄の各行の末尾に出す日時。日本時間の ISO 8601 で `index.html` の各記事に埋め込む。
+
+| 種類 | 取得元 |
+|---|---|
+| NHK ニュース・CachyOS ブログ | RSS の `pubDate`（時差の無い日時は日本時間、`-0000` は UTC） |
+| Claude Platform リリースノート | 見出しの日付（時刻は無いので日付だけ。選択欄も日付だけ） |
+| Claude Code（日本語・英語） | GitHub のリリース日時（`api.github.com/repos/anthropics/claude-code/releases` の `published_at`。認証なしで 1 時間に 60 回まで） |
+
+読めない・取れないときは、前に埋め込んだ同じ記事の日時、それも無ければ取得した日時にする。
+GitHub のリリース日時が取れなかったときは、ログに `GitHub のリリース日時が取れなかった…` と出るだけで、更新は止めない。
 
 ### 訳し方（`--by`）
 
@@ -81,23 +98,25 @@ flowchart LR
 
 ### check で確かめること
 
-- コンソールにエラーが無い（api.rss2json.com のエラーは数えない。NHK ニュースの取得の失敗で、内蔵のニュースで動く）
-- 練習文の選択欄に「・YYYY年M月D日の更新」が 3 つ並ぶ
-- 「・Claude Code 2.1.xxx（英語）」の後に「・Claude Code 2.1.xxx（日本語）」が 3 つ並び、選ぶと訳が出る
+- コンソールにエラーが無い。ブラウザが `127.0.0.1` の外へ通信していない（TODO-041）
+- 練習文の選択欄に「・YYYY年M月D日の更新 (M/D)」が 3 つ並ぶ。末尾の日時は、埋め込んだ `pubDate` を日本時間にしたもの（読めないものは出さない）
+- 「・Claude Code 2.1.xxx（英語） (M/D hh:mm)」の後に「・Claude Code 2.1.xxx（日本語） (M/D hh:mm)」が 3 つ並び、選ぶと本文が出る
 - 「🐧 CachyOS」の欄に、英語 3 件と「（日本語）」3 件が並び、英語と日本語を 1 件ずつ選ぶと本文の全部が出る
+- 「📰 NHK主要ニュースまとめ (N本・M/D hh:mm)」の行が、`FALLBACK_NHK_NEWS` の一番新しい `pubDate` と合う
 - 「Claudeニュースまとめ」を選ぶと、3 日分が `【タイトル】本文` の形で出る（CHANGELOG は含まない）
 
-## cron で毎日流す
+## cron で 3 時間ごとに流す
 
-`update-notes.sh google,claude` を cron で毎日流すと、Google 翻訳で訳し（落ちたら claude で流し直し）、
+`update-notes.sh google,claude` を cron で 3 時間ごとに流すと、Google 翻訳で訳し（落ちたら claude で流し直し）、
 commit と push まで済ませる。crontab への登録は手で行う。
 
 ```mermaid
 flowchart TD
-  A[事前の確認] --> B["crontab -e で登録"] --> C[次の日にログを見る]
+  A[事前の確認] --> B["crontab -e で登録"] --> C[あとでログを見る]
   C -->|変更なし / push まで済んだ| D[そのまま]
-  C -->|途中で落ちた| F[訳の分は戻る。NHK ニュースだけ push 済みで、終了コード 1。訳は次の日に流し直される] --> D
+  C -->|途中で落ちた| F[訳の分は戻る。NHK ニュースだけ push 済みで、終了コード 1。訳は次の回に流し直される] --> D
   C -->|「取得できず更新しなかった」の行がある| G[取れた分は push 済み。取れなかったものの取得先や書式を確かめる] --> D
+  C -->|「見送り: …」の行| H[commit は push できる状態に戻す。未 push の commit を push するか、分岐を解消する] --> D
   C -->|push だけ落ちた| E["git push を手で流す"] --> D
 ```
 
@@ -114,10 +133,10 @@ ssh -T git@github.com        # "successfully authenticated" と出ること
 
 ### 2. 登録
 
-`crontab -e` で次の 1 行を足す。毎朝 6 時に流し、ログを `~/tmp/update-notes.log` に足していく。
+`crontab -e` で次の 1 行を足す。毎時 0 分から 3 時間おき（0・3・6…時）に流し、ログを `~/tmp/update-notes.log` に足していく。
 
 ```crontab
-0 6 * * * export PATH=$HOME/.local/bin:$HOME/.local/share/mise/shims:/usr/bin:/bin; { date; $HOME/work/jp-long-typing/update-notes.sh google,claude; } >> $HOME/tmp/update-notes.log 2>&1
+0 */3 * * * export PATH=$HOME/.local/bin:$HOME/.local/share/mise/shims:/usr/bin:/bin; { date; $HOME/work/jp-long-typing/update-notes.sh google,claude; } >> $HOME/tmp/update-notes.log 2>&1
 ```
 
 - 時刻は先頭の 2 つ（分 時）で決まる。リポジトリが別の場所にあるときは `$HOME/work/jp-long-typing` を直す
@@ -127,7 +146,7 @@ ssh -T git@github.com        # "successfully authenticated" と出ること
 
 ### 3. 動いたかの確かめ方
 
-次の日に `~/tmp/update-notes.log` を見る。`date` の行が 1 回分の区切り。ログは消さずに伸びるので、ときどき見て消す。
+あとで `~/tmp/update-notes.log` を見る。`date` の行が 1 回分の区切り。ログは消さずに伸びるので、ときどき見て消す。
 
 変更が無かった日（最後が「変更なし」）:
 
@@ -149,6 +168,15 @@ CACHYOS_JA: 変更なし
 FALLBACK_NHK_NEWS: 変更なし
 ```
 
+見送った回（未 push の commit がある、分岐している、master でない。終了コードは 0）:
+
+```
+Thu Oct 29 03:00:01 JST 2026
+見送り: origin/master と未 push のコミットがある（遅れ 0、先行 1）
+```
+
+作業中の commit は push してから、cron に任せる（TODO-041）。
+
 `fetch` の最後の「変更なし」は訳の分だけの話で、その後に NHK の行（`最新 6 件に更新した` か `変更なし`）が続く。
 NHK はほぼ毎日変わるので、実際は `FALLBACK_NHK_NEWS: 最新 6 件に更新した` と `check` の `OK`、commit と push の行が続く日が多い。
 
@@ -167,7 +195,7 @@ To github.com:ytani01/jp-long-typing.git
 
 Google 翻訳が落ちた日は、`Google 翻訳に失敗した（…）` と `claude で流し直す` の後に、claude で同じ流れが続く。
 
-- 途中で落ちたときは `index.html` と `last-source.json` を戻してから止まるので、次の日にそのまま流し直される。
+- 途中で落ちたときは `index.html` と `last-source.json` を戻してから止まるので、次の回（3 時間後）にそのまま流し直される。
   何で落ちたかは下の「失敗したとき」を見る
 - push だけ落ちた日は、commit が手元に残る。次に変更がある日まで push されないので、`git push` を手で流す
 
@@ -193,7 +221,7 @@ Google 翻訳が落ちた日は、`Google 翻訳に失敗した（…）` と `c
 （人向けの名前は リリースノート / CHANGELOG / CachyOS ブログ）。
 全部取れないときは終了コード 1 で止まる。取れなかったものは、`update-notes.sh` のコミットメッセージに入らない。
 `nhk` は取得・解析に失敗すると、`FALLBACK_NHK_NEWS（NHK ニュース）: 取得できず更新しなかった。前の内容のまま残す（理由: …）` を出して `index.html` に触れない（他の段は止めない）。
-RSS が 1〜5 件の日は、ブラウザと同じくある分だけ埋め込む（0 件は失敗）。
+RSS が 1〜5 件の日は、ある分だけ埋め込む（0 件は失敗）。
 
 `update-notes.sh` は、ログに「取得できず更新しなかった」の行があれば、取れた分の commit と push を済ませてから終了コード 1 で終わる
 （差分が無くて commit しないときも 1）。cron のログで気づける。`/update-release-notes` では、行が出たら利用者に知らせる

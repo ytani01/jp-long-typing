@@ -7,14 +7,18 @@
 
 - **`index.html` 1 ファイルのまま保つ。** JS・CSS を別ファイルに分けない。
   外部ライブラリ・CDN を足さない（音も Web Audio API で作っている）
-- NHK ニュースの取得に失敗しても、内蔵のフォールバック（`FALLBACK_NHK_NEWS`）で
-  動くようにする
+- NHK ニュースは、埋め込んだ `FALLBACK_NHK_NEWS` で動く（ブラウザでは取得しない。TODO-041）
 - Claude Platform リリースノートはブラウザで取得しない。`update-release-notes`
   skill で訳して `CLAUDE_NOTES` に埋め込む（TODO-017）
 - Claude Code の CHANGELOG の日本語版も同じ skill で訳して `CLAUDE_CODE_JA` に
-  埋め込む。英語版はこれまでどおりブラウザで取得する（TODO-020）
+  埋め込む（TODO-020）。英語版（最新版）も `FALLBACK_CLAUDE_CODE` に埋め込む。
+  **ブラウザでは何も取得しない**。rss2json の NHK も GitHub の CHANGELOG も取らず、
+  取得失敗の alert も無い（TODO-041）
 - CachyOS ブログの最新 3 件も同じ skill で、英語の本文を `CACHYOS_EN`、訳を `CACHYOS_JA` に埋め込む（TODO-037）
 - 内蔵の NHK ニュース（`FALLBACK_NHK_NEWS`）も同じ `notes.py` が RSS から取って最新 6 件に書き換える。訳さない（TODO-039）
+- 各記事の配信日時（`pubDate`）も埋め込み、選択欄の各行に日本時間で出す（TODO-040、TODO-041）
+- `update-notes.sh` は、master でない・未 push・分岐しているときは何もせず終わる。
+  push は自分が作った commit の SHA だけ送る（TODO-041）
 
 ## 確認の手順
 

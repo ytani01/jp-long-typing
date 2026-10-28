@@ -12,6 +12,22 @@ for b in "${bys[@]}"; do
   [[ $b == claude || $b == google ]] || { echo "訳し方は claude か google: $b" >&2; exit 1; }
 done
 
+# 作業中のコミットを push してしまわないよう、始める前に origin/master と比べる（TODO-041）。
+# master でない・未 push のコミットがある・分岐している、なら何もせず 0 で終わる（cron のログで分かる）。遅れているときだけ取り込む
+branch=$(git symbolic-ref --short -q HEAD || true)
+if [[ $branch != master ]]; then
+  echo "見送り: master でない（${branch:-detached HEAD}）"
+  exit 0
+fi
+st=$(githooks/sync-state.sh) || { echo "origin を fetch できなかった" >&2; exit 1; }
+read -r behind ahead <<< "$st"
+if (( ahead > 0 )); then
+  if (( behind > 0 )); then why="分岐している"; else why="未 push のコミットがある"; fi
+  echo "見送り: origin/master と${why}（遅れ ${behind}、先行 ${ahead}）"
+  exit 0
+fi
+(( behind == 0 )) || git merge --ff-only origin/master
+
 # 手で直した分まで commit してしまわないように
 if ! git diff --quiet HEAD -- "${files[@]}"; then
   echo "${files[*]} に commit していない変更がある" >&2
@@ -55,11 +71,12 @@ what=${what# }  # 英数字の前後の半角空白のうち、先頭の分は�
 nhk=NHK\ ニュース
 grep -Eq "^FALLBACK_NHK_NEWS(（.*）)?: (変更なし|取得できず更新しなかった)" "$log" && nhk=
 if [[ -z $what ]]; then
-  msg="${nhk}を"
+  msg="${nhk:-記事の日時}を"  # 配信日時だけが変わった日は NHK も訳も無い
 else
   msg="${what}の訳を"
   [[ -z $nhk ]] || msg="${nhk}と、${msg}"
 fi
 git commit -m "chore(news): ${msg} $(date +%F) 時点に更新する" -- "${files[@]}"
-git push
+# 自分が作った commit だけを送る。HEAD や master をそのまま送らない
+git push origin "$(git rev-parse HEAD):refs/heads/master"
 exit "$skipped"

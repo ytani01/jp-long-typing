@@ -5,12 +5,11 @@ description: Claude Platform リリースノートの新しい 3 日分と、Cla
 
 # リリースノートの埋め込み
 
-リリースノートは CORS ヘッダーを返さないので、ブラウザでは取得しない。
-この手順で `index.html` の `CLAUDE_NOTES` を書き換え、コミットと push で
-反映する（TODO-017）。
+ブラウザでは何も取得しない。この手順（普段は cron の `update-notes.sh`）で
+`index.html` の `CLAUDE_NOTES` を書き換え、コミットと push で反映する（TODO-017、TODO-041）。
 
-Claude Code の CHANGELOG は英語版をブラウザで取得するが、日本語版は無いので、
-同じ手順で訳して `CLAUDE_CODE_JA` に埋め込む（TODO-020）。
+Claude Code の CHANGELOG は、日本語版を訳して `CLAUDE_CODE_JA` に、最新版の英語（先頭 8 項目）を `FALLBACK_CLAUDE_CODE` に埋め込む（TODO-020、TODO-041）。
+各記事には配信日時 `pubDate` も埋め込む。選択欄の各行に出る（Claude Code の版の日時は GitHub のリリース日時）。
 
 CachyOS ブログ（RSS の最新 3 件）は、本文を英語のまま `CACHYOS_EN`、訳を `CACHYOS_JA` に埋め込む（TODO-037）。
 
@@ -30,4 +29,4 @@ CachyOS ブログ（RSS の最新 3 件）は、本文を英語のまま `CACHYO
    ```
 
 2. `git status` で `index.html` に差分が無ければ終える。ログの「変更なし」は訳の分だけの話で、その後に NHK ニュースの行（`最新 6 件に更新した` か `変更なし`）が続くので、最後まで読む。ログに「取得できず更新しなかった」の行が出たら、どれが取れなかったかを利用者に知らせる。`check` が `OK` 以外で終わったら、文書の「失敗したとき」を見る
-3. 文書の「終わったら」のメッセージでコミットする。push は利用者が行う
+3. 文書の「終わったら」のメッセージでコミットする。push は利用者が行う（`update-notes.sh` は origin と比べてから自分の commit だけを push する。文書の「cron で 3 時間ごとに流す」）

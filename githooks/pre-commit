@@ -1,0 +1,7 @@
+#!/bin/bash
+# commit のたびに、origin/master より遅れていないか見る。警告するだけで、commit は止めない（TODO-041）
+# 使うには、この clone で一度 `git config core.hooksPath githooks` を流す（README の「cron で更新する」）
+st=$("$(dirname "$0")/sync-state.sh") || exit 0   # fetch できなくても止めない
+read -r behind _ <<< "$st"
+(( behind == 0 )) || echo "警告: origin/master より ${behind} 件遅れている。cron の更新が push されている。先に git pull する方がよい" >&2
+exit 0
