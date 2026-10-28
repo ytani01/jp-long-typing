@@ -66,3 +66,26 @@
 - `notes.py check`: `OK`（rc=0）
 - Playwright（`archives/agents/TODO-041/check-nhk-rows.mjs`）: NHK の行は `news-summary  📰 NHK主要ニュースまとめ (6本・10/29 01:44)` の下に `news-0`〜`news-5` が `・【地震情報】千葉県北東部で震度5弱 津波の心配なし (10/29 01:00)` のように並ぶ。`claude-0` は `・2026年10月23日の更新`。`news-2` を選ぶと、その記事の本文が出て、ほかの記事の本文・まとめの印（【ニュース1】）は出ない。JS の例外 0、ダイアログ 0
 - 足した検証が、外すと落ちること: 記事ごとの行を作る `appendChild` を無効にすると、`check` が落ちる（node の例外で異常終了）
+
+## レビュー後の直し
+
+reviewer の指摘（`reviewer-report.md`）と、利用者の決定に沿って直した。
+
+- 要修正 1（push の範囲）: `update-notes.sh` を、始めの判定（master でない・未 push・分岐は見送り。fetch 失敗は 1）のあと、`origin/master` から `mktemp -d` の下に作った一時的な worktree（`git worktree add --detach`）の中で notes.py の実行・戻す処理・`google,claude` の流し直し・NHK だけの更新・commit・push を行う形にした。手元の作業ツリーと master には触れない。push は worktree の commit の SHA。終わり（EXIT trap）に `git worktree remove --force` と `prune`、そのあと、手元が master・`git diff --quiet HEAD`（未コミットの変更なし）・手元 HEAD が push した SHA（または見送り時は fetch した origin/master）の祖先、のときだけ `git merge --ff-only`。できなければ `手元に取り込まなかった: …` をログに出すだけ。「commit していない変更がある」の確認は、worktree が clean なので不要になり消した（検討 4 はこれで解消）。`update-notes.sh:74` のコメントも実際の条件に直した（検討 5）。見送りの文言は `見送り: 未 push のコミットがある（origin/master より遅れ 0、先行 1）`（好みの指摘）
+- 要修正 2: `index.html` の `PRESETS[0]` の説明を「CHANGELOG の英語版と NHK ニュースも内蔵していて、内蔵のデータは 3 時間ごとに更新されます。」にした
+- hook: `sync-state.sh` の fetch の上限を 5 秒（起動・commit とも）。`.claude/settings.json` の SessionStart に `matcher: "startup|clear"`（compact・resume では動かない）。時間切れ・失敗は何も出さず 0
+- 検討 6: GitHub の応答が `null`・書式違い・版なし・JSON の形違いのとき、`parse_code` が `''` にし、`fetch` が前の日時か取得日時にする。ほかの更新は止めない
+- 検討 7: NHK は同じ見出しを 1 本にまとめ（最初の記事を残す）、重複を除いて最新 6 本にする
+- 検討 8: 試すスクリプトを `archives/agents/TODO-041/update-notes-test.sh` に置いた（作業ツリーの今の内容を一時 clone に重ね、本物の origin には push しない）
+- 文書: README・`docs/update-release-notes.md`（worktree、手元に取り込まなかった行、push が落ちたら捨てられて次の回が流し直す、GitHub、NHK の重複）・CLAUDE.md を直した
+
+### 確かめた結果
+
+- `update-notes-test.sh`（実行結果）: 1 同じ（push、origin==手元 HEAD、親は元の先頭、exit 0）／2 先・4 分岐・5 master でない（`見送り: …`、origin・HEAD 変わらず、exit 0）／3 遅れ（親が他者の commit、origin==手元 HEAD）／6 fetch できない（exit 1）／**7 notes.py の実行中に手元の master へ commit（`during`）: origin に `during` が無く、origin の親は元の先頭、手元に `during` が残り、`手元に取り込まなかった: 手元の master に commit が増えていて、早送りできない`、exit 0**／8 手元に commit していない変更: push され、手元は取り込まず README の変更が残る。どの場合も worktree は 1 個（残らない）
+- ケース 7 は、直す前の `update-notes.sh`（`git show HEAD:update-notes.sh`）に差し替えると、origin に `during` が入って落ちる（`origin に during が無い: no`）
+- 単体: NHK の RSS を差し替えて `AABCDEFGH` → `ABCDEF`。GitHub の応答を `null`・`{"x":1}`・`"bad"` に差し替えても `parse_code` は `['', '', '']` を返して落ちない
+- `notes.py check`: `OK`（rc=0）。表示は前の確認から変わらないので Playwright は測り直していない
+
+### 残る懸念
+
+- worktree と trap の中身は、cron の実機では確かめていない（一時 clone でのみ）。`kill -9` などで trap が走らなかったときは、`/tmp` に worktree が残り、`.git/worktrees` にも記録が残る（次の `git worktree prune` で消える。`update-notes.sh` は流す前に prune していない）

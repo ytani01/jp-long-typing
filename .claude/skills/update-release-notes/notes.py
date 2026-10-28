@@ -104,7 +104,7 @@ def parse_code(md):
     vers = []
     try:
         rel = {r['tag_name']: r['published_at'] for r in json.loads(get(RELEASES_URL))}
-    except (subprocess.CalledProcessError, ValueError, KeyError, TypeError) as x:
+    except (subprocess.CalledProcessError, ValueError, KeyError, TypeError) as x:  # 想定と違う応答でも、ほかの更新は止めない
         print(f'GitHub のリリース日時が取れなかった。取得した日時にする: {x}')
         rel = {}
     for line in md.splitlines():
@@ -112,9 +112,11 @@ def parse_code(md):
             if len(vers) == 3:
                 break
             v = line[3:].strip()
-            at = rel.get(f'v{v}', '').replace('Z', '+00:00')
-            vers.append({'title': f'Claude Code {v}（日本語）', 'en': [],
-                         'pubDate': datetime.datetime.fromisoformat(at).astimezone(JST).isoformat() if at else ''})
+            try:
+                at = datetime.datetime.fromisoformat(rel[f'v{v}'].replace('Z', '+00:00')).astimezone(JST).isoformat()
+            except (KeyError, AttributeError, ValueError):  # 無い・null・書式違いは ''（fetch が前の日時か取得日時にする）
+                at = ''
+            vers.append({'title': f'Claude Code {v}（日本語）', 'en': [], 'pubDate': at})
         elif vers and (m := ITEM.match(line)) and len(vers[-1]['en']) < 8:
             vers[-1]['en'].append(m.group(1))
     return vers
@@ -284,17 +286,21 @@ def trim(s):
 def parse_nhk():
     """RSS の新しい最大 6 件。整形は TODO-010 で決めたとおり（TODO-039）。読めなければ ValueError。"""
     try:
-        items = list(ET.fromstring(get(NHK_RSS)).iter('item'))[:6]
+        items = list(ET.fromstring(get(NHK_RSS)).iter('item'))
     except ET.ParseError as x:
         raise ValueError(f'RSS が XML として読めない: {x}')
-    if not items:  # 1〜5 件の日は、fetchNhkNews と同じく、ある分だけ受け入れる
+    if not items:  # 1〜5 件の日は、ある分だけ受け入れる
         raise ValueError('item が 0 件（書式が変わったかも）')
     out = []
     for it in items:
+        if len(out) == 6:
+            break
         title = trim(it.findtext('title') or '')
         desc = trim(re.sub(r'<[^>]*>', '', it.findtext('description') or '').replace('&hellip;', '…').replace('...', '…'))
         if not title:
             raise ValueError('title が空の item がある（書式が変わったかも）')
+        if any(o['title'] == title for o in out):  # 同じ見出しは 1 本にまとめる（最初のものを残す）。見出しで日時を引くため
+            continue
         # 要約は 100 字前後で「…」と切れる。最後の「。」まで残し、「。」が無ければ見出しだけにする
         if desc.endswith('…'):
             desc = desc[:desc.rfind('。') + 1]

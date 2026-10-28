@@ -1,5 +1,5 @@
 #!/bin/bash
-# SessionStart: origin/master と比べ、遅れていれば「先に pull」、先に進んでいれば「cron は見送り中」を知らせる。どちらでもなければ何も出さない（TODO-041）
+# SessionStart（startup と clear のとき。.claude/settings.json の matcher）: origin/master と比べ、遅れていれば「先に pull」、先に進んでいれば「cron は見送り中」を知らせる。どちらでもなければ、fetch が時間切れ（5 秒）のときも、何も出さない（TODO-041）
 st=$("${CLAUDE_PROJECT_DIR:-.}/githooks/sync-state.sh") || exit 0
 read -r behind ahead <<< "$st"
 msg=

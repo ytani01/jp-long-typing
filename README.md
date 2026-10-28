@@ -77,10 +77,12 @@ python3 -m http.server 8080
 ## cron の更新と開発（TODO-041）
 
 cron の `update-notes.sh` は、作業中のコミットを push しないよう、始める前に `git fetch` して origin/master と比べる。
-master でない・未 push のコミットがある・origin と分岐している、のどれかなら、ログに理由を残して何もせず終わる。遅れているときだけ `git merge --ff-only` で取り込む。push は自分が作った commit の SHA だけを送る。
+master でない・未 push のコミットがある・origin と分岐している、のどれかなら、ログに理由を残して何もせず終わる。
+そうでなければ、origin/master から作った一時的な worktree の中で更新・commit・push を行い（手元の作業ツリーと master には触れない）、worktree で作った commit の SHA だけを送る。
+終わったあと、手元が master で、commit していない変更が無く、早送りできるときだけ `git merge --ff-only` で取り込む（できなければログに残すだけ）。
 つまり、開発は cron を流すマシンでしてよいが、**commit したら push して、cron が動ける状態に戻す**。
 
-- Claude Code でこのリポジトリを開くと、`.claude/settings.json` の SessionStart hook が fetch して、遅れていれば「先に pull」、未 push があれば「cron は見送り中」と知らせる
+- Claude Code でこのリポジトリを開くと、`.claude/settings.json` の SessionStart hook（起動と `/clear` のとき）が fetch（上限 5 秒）して、遅れていれば「先に pull」、未 push があれば「cron は見送り中」と知らせる
 - commit 時に origin より遅れていれば警告する pre-commit hook は `githooks/` にある（警告だけで、commit は止めない）。clone ごとに一度だけ、有効にする
 
   ```bash

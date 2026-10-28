@@ -13,7 +13,7 @@ for b in "${bys[@]}"; do
 done
 
 # 作業中のコミットを push してしまわないよう、始める前に origin/master と比べる（TODO-041）。
-# master でない・未 push のコミットがある・分岐している、なら何もせず 0 で終わる（cron のログで分かる）。遅れているときだけ取り込む
+# master でない・未 push のコミットがある・分岐している、なら何もせず 0 で終わる（cron のログで分かる）
 branch=$(git symbolic-ref --short -q HEAD || true)
 if [[ $branch != master ]]; then
   echo "見送り: master でない（${branch:-detached HEAD}）"
@@ -23,24 +23,40 @@ st=$(githooks/sync-state.sh) || { echo "origin を fetch できなかった" >&2
 read -r behind ahead <<< "$st"
 if (( ahead > 0 )); then
   if (( behind > 0 )); then why="分岐している"; else why="未 push のコミットがある"; fi
-  echo "見送り: origin/master と${why}（遅れ ${behind}、先行 ${ahead}）"
+  echo "見送り: ${why}（origin/master より遅れ ${behind}、先行 ${ahead}）"
   exit 0
 fi
-(( behind == 0 )) || git merge --ff-only origin/master
 
-# 手で直した分まで commit してしまわないように
-if ! git diff --quiet HEAD -- "${files[@]}"; then
-  echo "${files[*]} に commit していない変更がある" >&2
-  exit 1
-fi
-
+# 更新は、origin/master から作った一時的な worktree の中で行う。手元の作業ツリーと master には、
+# 流している間に何があっても触れない（途中で手元の master に commit が入っても、それは push されない）。
+# 手元は、終わったあとで早送りできるときだけ取り込む
+base=$(git rev-parse origin/master)
+target=$base  # 手元に取り込む先。push したら、その commit にする
+repo=$PWD
+wt=$(mktemp -d)
 work=$(mktemp --suffix=.json)
 log=$(mktemp)
-trap 'rm -f "$work" "$log"' EXIT
+sync_local() {
+  [[ $(git symbolic-ref --short -q HEAD || true) == master ]] || { echo "手元に取り込まなかった: master でない"; return 0; }
+  git diff --quiet HEAD || { echo "手元に取り込まなかった: commit していない変更がある"; return 0; }
+  [[ $(git rev-parse HEAD) == "$target" ]] && return 0
+  git merge-base --is-ancestor HEAD "$target" || { echo "手元に取り込まなかった: 手元の master に commit が増えていて、早送りできない"; return 0; }
+  git merge --ff-only --quiet "$target" || echo "手元に取り込めなかった"
+}
+cleanup() {
+  cd "$repo"
+  rm -f "$work" "$log"
+  { git worktree remove --force "$wt" && git worktree prune; } >/dev/null 2>&1 || true
+  sync_local || true
+}
+trap cleanup EXIT
+git worktree add --quiet --detach "$wt" "$base"
+cd "$wt"
+
 failed=1
 for i in "${!bys[@]}"; do
   PYTHONUNBUFFERED=1 .claude/skills/update-release-notes/notes.py run --by "${bys[i]}" "$work" | tee "$log" && { failed=0; break; }
-  # check で落ちると apply の書いた分が残り、次の run が「変更なし」で終わってしまう
+  # check で落ちると apply の書いた分が残り、次の run が「変更なし」で終わってしまう（worktree の中の分を戻す）
   git checkout HEAD -- "${files[@]}"
   (( i + 1 < ${#bys[@]} )) || break
   echo "${bys[i + 1]} で流し直す" >&2
@@ -71,12 +87,14 @@ what=${what# }  # 英数字の前後の半角空白のうち、先頭の分は�
 nhk=NHK\ ニュース
 grep -Eq "^FALLBACK_NHK_NEWS(（.*）)?: (変更なし|取得できず更新しなかった)" "$log" && nhk=
 if [[ -z $what ]]; then
-  msg="${nhk:-記事の日時}を"  # 配信日時だけが変わった日は NHK も訳も無い
+  msg="${nhk:-記事の日時}を"  # どの種類も「変更なし」「取得できず」なのに差分があるとき（英語版の本文だけがずれていた、など）
 else
   msg="${what}の訳を"
   [[ -z $nhk ]] || msg="${nhk}と、${msg}"
 fi
 git commit -m "chore(news): ${msg} $(date +%F) 時点に更新する" -- "${files[@]}"
-# 自分が作った commit だけを送る。HEAD や master をそのまま送らない
-git push origin "$(git rev-parse HEAD):refs/heads/master"
+# worktree で作った commit の SHA だけを送る。HEAD や master をそのまま送らない
+sha=$(git rev-parse HEAD)
+git push origin "$sha:refs/heads/master"
+target=$sha
 exit "$skipped"

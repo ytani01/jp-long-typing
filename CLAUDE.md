@@ -18,7 +18,8 @@
 - 内蔵の NHK ニュース（`FALLBACK_NHK_NEWS`）も同じ `notes.py` が RSS から取って最新 6 件に書き換える。訳さない（TODO-039）
 - 各記事の配信日時（`pubDate`）も埋め込み、選択欄の各行に日本時間で出す（TODO-040、TODO-041）
 - `update-notes.sh` は、master でない・未 push・分岐しているときは何もせず終わる。
-  push は自分が作った commit の SHA だけ送る（TODO-041）
+  更新は origin/master から作った一時的な worktree で行い、手元の作業ツリーと master に触れない。
+  push は worktree で作った commit の SHA だけ送る（TODO-041）
 
 ## 確認の手順
 

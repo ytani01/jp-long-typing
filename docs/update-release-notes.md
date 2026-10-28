@@ -28,15 +28,16 @@ ln -s ~/work/jp-long-typing/.claude/skills/update-release-notes/notes.py ~/bin/u
 変わっていたら `index.html` と `last-source.json` を「終わったら」のメッセージで commit して push する。
 「変更なし」のときは commit しない。`run` が落ちた日は、NHK ニュースの分だけ commit する（下の「失敗したとき」）。
 
-- 始める前に `git fetch` し、master でない・origin より先に進んでいる（未 push の commit がある）・分岐している、のどれかなら、
-  ログに理由（`見送り: …`）を出し、何もせず終了コード 0 で終わる。origin より遅れていれば `git merge --ff-only` で取り込む。
-  fetch できなかったときは終了コード 1（TODO-041）
-- 始める前に `index.html` か `last-source.json` に commit していない変更があると、何もせずに止まる。
-  `notes.py run` で `check` が落ちた後に流すときも、先に「失敗したとき」の手順で戻す
-- `run` が落ちたとき（translate でも check でも）は、`index.html` と `last-source.json` を HEAD に戻す。
+- 始める前に `git fetch`（上限 5 秒）し、master でない・origin より先に進んでいる（未 push の commit がある）・分岐している、のどれかなら、
+  ログに理由（`見送り: …`）を出し、何もせず終了コード 0 で終わる。fetch できなかったときは終了コード 1（TODO-041）
+- 更新は、origin/master から作った一時的な worktree（`mktemp` の下。終わると消す）の中で行う。手元の作業ツリーと master には触れないので、
+  流している間に手元で commit したり、`index.html` を編集したりしても、それは push されず、上書きもされない
+- 終わったあと、手元が master で、commit していない変更が無く、origin/master に早送りできるときだけ、`git merge --ff-only` で取り込む。
+  できなければ `手元に取り込まなかった: …` とログに残すだけ（push は済んでいる）
+- `run` が落ちたとき（translate でも check でも）は、worktree の `index.html` と `last-source.json` を HEAD に戻す。
   `google,claude` のように `,` で並べてあれば次の訳し方で流し直し、最後のものも落ちたら、NHK ニュースだけを更新して commit・push し、終了コード 1 で終わる
-- push は自分が作った commit の SHA だけを送る（`git push origin <SHA>:refs/heads/master`。HEAD や master はそのまま送らない）。
-  push だけ落ちたときは、commit が手元に残って「未 push」になり、次からは見送られる。`git push` を手で流す（TODO-041）
+- push は worktree で作った commit の SHA だけを送る（`git push origin <SHA>:refs/heads/master`。HEAD や master はそのまま送らない）。
+  push が落ちたとき（origin が先に進んだ、通信できない、など）は、commit は worktree と一緒に捨てられ、次の回が流し直す（TODO-041）
 
 ```bash
 ./update-notes.sh          # claude で訳す
@@ -79,12 +80,12 @@ flowchart LR
 
 | 種類 | 取得元 |
 |---|---|
-| NHK ニュース・CachyOS ブログ | RSS の `pubDate`（時差の無い日時は日本時間、`-0000` は UTC） |
+| NHK ニュース・CachyOS ブログ（NHK は同じ見出しを 1 本にまとめる） | RSS の `pubDate`（時差の無い日時は日本時間、`-0000` は UTC） |
 | Claude Platform リリースノート | 見出しの日付（時刻は無い。選択欄の行は名前に日付が入っているので、日時を付けない） |
 | Claude Code（日本語・英語） | GitHub のリリース日時（`api.github.com/repos/anthropics/claude-code/releases` の `published_at`。認証なしで 1 時間に 60 回まで） |
 
 読めない・取れないときは、前に埋め込んだ同じ記事の日時、それも無ければ取得した日時にする。
-GitHub のリリース日時が取れなかったときは、ログに `GitHub のリリース日時が取れなかった…` と出るだけで、更新は止めない。
+GitHub のリリース日時が取れなかったとき（通信の失敗、応答の形が違う、版が見つからない、`published_at` が `null`）は、ほかの更新は止めない。応答全体が読めなければログに `GitHub のリリース日時が取れなかった…` と出る。
 
 ### 訳し方（`--by`）
 
@@ -117,7 +118,8 @@ flowchart TD
   C -->|途中で落ちた| F[訳の分は戻る。NHK ニュースだけ push 済みで、終了コード 1。訳は次の回に流し直される] --> D
   C -->|「取得できず更新しなかった」の行がある| G[取れた分は push 済み。取れなかったものの取得先や書式を確かめる] --> D
   C -->|「見送り: …」の行| H[commit は push できる状態に戻す。未 push の commit を push するか、分岐を解消する] --> D
-  C -->|push だけ落ちた| E["git push を手で流す"] --> D
+  C -->|push だけ落ちた| E["手元には何も残らない。次の回が流し直す"] --> D
+  C -->|「手元に取り込まなかった: …」の行| I["push は済んでいる。手元で git pull（--ff-only か rebase）する"] --> D
 ```
 
 ### 1. 事前の確認
@@ -172,7 +174,7 @@ FALLBACK_NHK_NEWS: 変更なし
 
 ```
 Thu Oct 29 03:00:01 JST 2026
-見送り: origin/master と未 push のコミットがある（遅れ 0、先行 1）
+見送り: 未 push のコミットがある（origin/master より遅れ 0、先行 1）
 ```
 
 作業中の commit は push してから、cron に任せる（TODO-041）。
@@ -197,7 +199,7 @@ Google 翻訳が落ちた日は、`Google 翻訳に失敗した（…）` と `c
 
 - 途中で落ちたときは `index.html` と `last-source.json` を戻してから止まるので、次の回（3 時間後）にそのまま流し直される。
   何で落ちたかは下の「失敗したとき」を見る
-- push だけ落ちた日は、commit が手元に残る。次に変更がある日まで push されないので、`git push` を手で流す
+- push だけ落ちた日は、commit は捨てられ、次の回が流し直す（手元には何も残らない）
 
 ### 4. 止め方
 
