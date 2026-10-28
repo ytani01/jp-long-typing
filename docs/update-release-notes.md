@@ -26,12 +26,12 @@ ln -s ~/work/jp-long-typing/.claude/skills/update-release-notes/notes.py ~/bin/u
 
 いつもの更新は、リポジトリ直下の `update-notes.sh` で済む。`run` を流し、
 変わっていたら `index.html` と `last-source.json` を「終わったら」のメッセージで commit して push する。
-「変更なし」や `check` の失敗のときは commit しない。
+「変更なし」のときは commit しない。`run` が落ちた日は、NHK ニュースの分だけ commit する（下の「失敗したとき」）。
 
 - 始める前に `index.html` か `last-source.json` に commit していない変更があると、何もせずに止まる。
   `notes.py run` で `check` が落ちた後に流すときも、先に「失敗したとき」の手順で戻す
 - `run` が落ちたとき（translate でも check でも）は、`index.html` と `last-source.json` を HEAD に戻す。
-  `google,claude` のように `,` で並べてあれば次の訳し方で流し直し、最後のものも落ちたら止まる
+  `google,claude` のように `,` で並べてあれば次の訳し方で流し直し、最後のものも落ちたら、NHK ニュースだけを更新して commit・push し、終了コード 1 で終わる
 - push は `git push` をそのまま流すので、ほかに push していない commit があれば一緒に送られる。
   push だけ落ちたときは、流し直さずに `git push` を手で流す（流し直すと「変更なし」で終わり、push されない）
 
@@ -96,7 +96,7 @@ commit と push まで済ませる。crontab への登録は手で行う。
 flowchart TD
   A[事前の確認] --> B["crontab -e で登録"] --> C[次の日にログを見る]
   C -->|変更なし / push まで済んだ| D[そのまま]
-  C -->|途中で落ちた| F[戻して止まる。次の日に流し直される] --> D
+  C -->|途中で落ちた| F[訳の分は戻る。NHK ニュースだけ push 済みで、終了コード 1。訳は次の日に流し直される] --> D
   C -->|「取得できず更新しなかった」の行がある| G[取れた分は push 済み。取れなかったものの取得先や書式を確かめる] --> D
   C -->|push だけ落ちた| E["git push を手で流す"] --> D
 ```
