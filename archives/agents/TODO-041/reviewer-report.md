@@ -67,3 +67,55 @@
 ## 作り込みすぎ
 
 - 作り込みすぎ: なし（強いて言えば、`applyClaudeData` の `innerHTML = ''` は「ニュース更新」で何度も呼ぶための作りで、今は 1 回しか呼ばない。害は無いので消さなくてよい）
+
+---
+
+# 2 巡目（commit `980ce3e`）
+
+静的に読み、bash の挙動 2 点だけ手元で試した（下に値）。本物の `update-notes.sh` は流していない。
+
+## 要修正
+
+なし。
+
+## 前回の指摘の行方
+
+- 要修正 1（push の範囲）: 直っている。判定のあとは `origin/master` から作った detached の worktree で commit し、その SHA を push する。手元の master に途中で commit が入っても、手元のブランチを切り替えても、push する commit の祖先は `base` だけになる（`update-notes.sh:33-52`・`:97-99`）
+- 要修正 2（`index.html:898`）: 直っている
+- 検討 3（hook の待ち時間）: 上限 5 秒、`matcher: "startup|clear"`、hook の timeout は 10 秒。直っている
+- 検討 4（ff-only と確認の順）: worktree になり、始めの取り込みも手元の確認も無くなった。解消
+- 検討 5（74 行のコメント）: 実際の条件に合わせて直っている。配信日時だけが変わった日のメッセージが「…の訳を」になる点は、前と同じ（直す対象とはされていない）
+- 検討 6（GitHub）: 版ごとの try で `KeyError`・`AttributeError`・`ValueError` を受けるので、`null`・数値・書式違い・版なしのどれでも `''` になる。応答全体の形違いは外側の try が受ける。直っている
+- 検討 7（NHK の重複）: 同じ見出しを飛ばしてから 6 本で止めるので、`existing` で 1 本にまとまっても件数がずれない。今の `FALLBACK_NHK_NEWS` は 6 本・見出しも 6 種類（重複なし）。直っている
+- 検討 8: `archives/agents/TODO-041/update-notes-test.sh` に残っている
+
+## 既存の動き（worktree への書き換えで壊れていないか）
+
+- 失敗した run を戻す処理: worktree の中で `git checkout HEAD -- …`。worktree の HEAD は `base` なので、戻す先は前と同じく「取り込んだ後の origin/master」。問題なし
+- `google,claude` の流し直し、NHK だけ更新する処理、「変更なし」で終わる場合（`git diff --quiet` → `exit "$skipped"`）、commit メッセージの組み立て: 流す場所が worktree になっただけで、条件も文字列も変わっていない。問題なし
+- `notes.py` は `ROOT`・`LAST` をスクリプトの場所から決めるので、worktree の `index.html`・`last-source.json` を読み書きする。`claude -p` は `cwd=` に一時ディレクトリを渡しているので、worktree の場所に影響されない。.gitignore の対象（`settings.local.json`・`tools/out/`）は `notes.py` が使わない
+- 終了コード: EXIT trap の中で何が失敗しても、`exit N` の値が保たれる（`bash -c 'set -euo pipefail; f(){ false; }; trap "f || true" EXIT; exit 3'` → 3）
+- pre-commit hook（`core.hooksPath githooks` を設定した clone）は、worktree の commit でも worktree の `githooks/` が走る。fetch が 1 回増えるだけ（上限 5 秒）
+
+## 検討
+
+### 9. cron が流す `update-notes.sh` は手元のもの、`notes.py` は origin/master のもの
+
+- crontab は `$HOME/work/jp-long-typing/update-notes.sh`（手元）を呼び、`notes.py` は worktree（`base`）のものが走る。手元が遅れたまま（commit していない変更があって、終わったあとの取り込みが毎回見送られるなど）だと、古い `update-notes.sh` が新しい `notes.py` を流す
+- `update-notes.sh` は `notes.py` のログの行（`: 変更なし`・`: 取得できず更新しなかった`）を grep して、メッセージと終了コードを決めている。今後どちらかの書式だけ変えると、cron のマシンで食い違いが起きうる。手元の `update-notes.sh` に commit していない変更があれば、それもそのまま流れる（これは前から）
+- 今の時点では両方同じ内容なので、実害は未確認（今後、片方だけ変えたときの話）
+
+## kill -9 で worktree が残る件（実害の程度）
+
+- 残るのは `/tmp/tmp.XXXX`（tracked のファイルで約 3 MB。`/tmp` は tmpfs なので再起動で消える）と `.git/worktrees/tmp.XXXX` の記録。commit まで済んでいれば、その commit も残る
+- 次の回は新しい名前の worktree を作り、detached なのでブランチもふさがない。次の run に支障は無い。`.git/worktrees` の記録は、再起動でディレクトリが消えたあと、次の回の終わりの `git worktree prune` で消える
+- SIGTERM（シャットダウン・`kill`）では EXIT trap が走るので残らない（`bash -c 'trap … EXIT; sleep 30'` に SIGTERM → 終了コード 143 で trap が走った）。残るのは SIGKILL・OOM・電源断のときだけ
+- 気づくのは `git worktree list` に 1 行増えることくらい。実害は小さい
+
+## 好みの範囲
+
+- `TODO.md:17` の「遅れていれば `--ff-only` で取り込む」は、今は「終わったあとに、早送りできるときだけ」。決着のときに直すかは main の判断
+
+## 作り込みすぎ
+
+なし。

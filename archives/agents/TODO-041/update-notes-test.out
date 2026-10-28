@@ -1,0 +1,51 @@
+== 1 同じ（commit・push、手元も早送り）
+exit=0
+origin 親==前: yes  origin==手元 HEAD: yes
+worktree の数（1 のはず）: 1
+== 2 先（未 push）
+見送り: 未 push のコミットがある（origin/master より遅れ 0、先行 1）
+exit=0
+origin・HEAD 変わらず
+== 3 遅れ（取り込んで commit・push）
+On branch master
+Your branch is up to date with 'origin/master'.
+
+nothing to commit, working tree clean
+exit=0
+origin 親==other: yes  origin==手元 HEAD: yes
+worktree の数（1 のはず）: 1
+== 4 分岐
+見送り: 分岐している（origin/master より遅れ 1、先行 1）
+exit=0
+origin・HEAD 変わらず
+== 5 master でない
+On branch master
+Your branch is up to date with 'origin/master'.
+
+nothing to commit, working tree clean
+見送り: master でない（feat）
+exit=0
+origin 変わらず
+== 6 fetch できない
+On branch master
+Your branch is up to date with 'origin/master'.
+
+nothing to commit, working tree clean
+origin を fetch できなかった
+exit=1
+== 7 判定のあと、notes.py の実行中に手元の master へ commit する
+On branch master
+Your branch is up to date with 'origin/master'.
+
+nothing to commit, working tree clean
+手元に取り込まなかった: 手元の master に commit が増えていて、早送りできない
+exit=0
+手元に during がある: during
+origin に during が無い: yes  origin 親==前: yes  origin の先頭: chore(news): NHK ニュースを 2026-10-29 時点に更新する
+worktree の数（1 のはず）: 1
+== 8 手元に commit していない変更がある（push はされ、手元は取り込まない）
+手元に取り込まなかった: commit していない変更がある
+exit=0
+origin 親==前: yes  手元の変更が残る:  M README.md 
+worktree の数（1 のはず）: 1
+T=/tmp/tmp.JKFPIkVSCq
