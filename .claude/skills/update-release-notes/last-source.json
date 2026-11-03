@@ -22,6 +22,19 @@
   ],
   "code": [
     {
+      "title": "Claude Code 2.1.317（日本語）",
+      "en": [
+        "Added a warning to `/schedule` when a new cloud scheduled task gets connectors you did not ask for, with how to remove them",
+        "Added a check that asks before a web or shell tool call sends your account email address to the network",
+        "Added `onFailure: \"block\"` for Agent SDK hook callbacks, so a callback that fails blocks the action instead of letting it run",
+        "Added a notice in Claude Desktop's Code tab when your organization's remote managed settings haven't loaded for the session, and another once they do",
+        "Added a notice when auto mode's check has no answer for a subagent's tool call, which used to leave nothing in the main view",
+        "Added `anthropic.plan`, `anthropic.seat_type`, `anthropic.provider` and `anthropic.custom_base_url` to OTel metrics, events and spans",
+        "Added a cost report to the Claude apps gateway admin API, `GET /v1/organizations/analytics/cost`, for reading past spend over a date range in total, per developer, per day or per IdP group",
+        "Added a daily record of each developer's IdP groups on Claude apps gateways with `admin:` set, kept for `admin.identity_retention_days`, which the cost report groups by"
+      ]
+    },
+    {
       "title": "Claude Code 2.1.316（日本語）",
       "en": [
         "Added `CLAUDE_CODE_DISABLE_ULTRATHINK`, which turns the `ultrathink` keyword off",
@@ -45,19 +58,6 @@
         "Fixed `claude -p` exiting with code 0 and no output when startup failed; it now prints the error and exits 1",
         "Fixed Bedrock sessions with many images failing every turn and `/compact` with \"400 Input is too long.\" instead of removing older images and compacting",
         "Fixed Microsoft Foundry sessions failing when the resource has no deployment for the default Sonnet, Opus or Haiku model: Claude Code now falls back to an older model of that family"
-      ]
-    },
-    {
-      "title": "Claude Code 2.1.312（日本語）",
-      "en": [
-        "Added `oidc.user_id_claim` to the Claude apps gateway, to identify people by an id_token claim other than `sub`, such as Microsoft Entra ID's `oid`",
-        "Added click to send: in fullscreen, clicking the \"to send now\" hint under a queued message sends it right away, as its key does",
-        "Fixed managed settings and organization policy not being fetched for the rest of the session after signing in from the VS Code extension",
-        "Fixed Claude overwriting a very large CLAUDE.md, rules file or @-included file in a subdirectory after seeing only its start; Write now asks Claude to read it all or edit in place",
-        "Fixed per-directory and `paths:` skills not being found after a Bash `cd` deeper into a git repository",
-        "Fixed a rare case where the first reply after resuming a session in the terminal could be missing the next time the session was resumed",
-        "Fixed a command with an invalid name stopping all commands from loading, which could leave `claude -p` with no output",
-        "Fixed the Read tool sometimes failing on PDF pages with \"pdftoppm failed: Could not write image\" when the clean-up of old session files ran at the same time"
       ]
     }
   ],
