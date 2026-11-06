@@ -925,16 +925,16 @@
         "pubDate": "2026-11-06T22:42:00+09:00"
       },
       {
+        "title": "アメリカ就業者数 市場予想上回る 来週の物価動向焦点",
+        "author": "NHKニュース",
+        "text": "アメリカ就業者数 市場予想上回る 来週の物価動向焦点。\n円相場や株価に影響を及ぼすアメリカの雇用統計が発表され、10月の農業分野以外の就業者は、16万5000人増加し、市場の予想を大きく上回りました。",
+        "pubDate": "2026-11-07T00:11:00+09:00"
+      },
+      {
         "title": "余命宣告後“神様の贈り物” 2200万円持ち去り実刑判決 仙台",
         "author": "NHKニュース",
         "text": "余命宣告後“神様の贈り物” 2200万円持ち去り実刑判決 仙台。",
         "pubDate": "2026-11-06T21:23:00+09:00"
-      },
-      {
-        "title": "NTTドコモ 最大29万件余の顧客情報流出で社長陳謝",
-        "author": "NHKニュース",
-        "text": "NTTドコモ 最大29万件余の顧客情報流出で社長陳謝。\nNTTドコモが外部から不正アクセスを受け顧客の情報が流出した問題で、会社は6日に記者会見を開き、前田義晃社長が陳謝しました。",
-        "pubDate": "2026-11-06T21:53:25+09:00"
       },
       {
         "title": "高市首相 「台湾有事」答弁1年 “中国と安定的な関係構築を”",
@@ -949,10 +949,10 @@
         "pubDate": "2026-11-06T23:50:29+09:00"
       },
       {
-        "title": "相次いで空き巣被害にあった男性が状況語る 愛知 岡崎",
+        "title": "JESSE コカイン使用の疑いで逮捕 ロックバンドRIZEのボーカル",
         "author": "NHKニュース",
-        "text": "相次いで空き巣被害にあった男性が状況語る 愛知 岡崎。",
-        "pubDate": "2026-11-06T22:36:21+09:00"
+        "text": "JESSE コカイン使用の疑いで逮捕 ロックバンドRIZEのボーカル。\n「JESSE」の名前でロックバンドのボーカルとして活動している46歳の男のミュージシャンが、今月、コカインを使用したとして警視庁に逮捕されたことが捜査関係者への取材で分かりました。",
+        "pubDate": "2026-11-07T02:31:18+09:00"
       }
     ];
 
@@ -984,8 +984,14 @@
       }
     ];
 
-    // update-release-notes skill が書き換える（2026-11-04 時点の内容。最新 3 版の先頭 8 項目の訳。TODO-020）
+    // update-release-notes skill が書き換える（2026-11-07 時点の内容。最新 3 版の先頭 8 項目の訳。TODO-020）
     const CLAUDE_CODE_JA = [
+      {
+        "title": "Claude Code 2.1.319（日本語）",
+        "author": "Claude Code CHANGELOG",
+        "text": "LLM ゲートウェイの背後を含む、テレメトリまたは機能フラグをオフにして自動モードを変更しました。サーバーがチェックできない呼び出しは、組み込み分類子へのフォールバックなしで質問または拒否されます。引き続き使用するには、CLAUDE_CODE_AUTO_MODE_SERVER=0 を設定します (Bedrock、Vertex、Foundry は変更されません)。\nLLM ゲートウェイの背後で自動モードを変更しました: CLAUDE_CODE_AUTO_MODE_SERVER=1 は、CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS が設定されている場合でもサーバー側のチェックをオンにします。管理設定で後者を設定する場合は、「1」も設定する必要があります\nターミナルでの MCP タスクのサポートを追加しました。MCP サーバーがツール呼び出しをタスクとして実行すると、クロード コードはそれをすぐにバックグラウンドに移動し、終了時に結果をクロードに通知します。\nCLAUDE_CODE_DISABLE_MCP_TASK_BACKGROUND 環境変数を追加して、クロード コードがすぐにバックグラウンドに移動するのではなく、ツール呼び出し内で MCP タスクを待機するようにしました。\n「permissions.denyInsteadOfPrompting」設定を追加しました。ターミナル セッション、サブエージェント、チームメイトで、許可プロンプトを待機するツール呼び出しは拒否され、ターンが継続されます。\nClaude API コードが人々を待たせている場所を見つけて、評価に対してより高速な設定を試すために「/claude-api latency-optimize」を追加しました。\nテレメトリをオフにすることなく機能フラグの取得を停止する CLAUDE_CODE_DISABLE_FEATURE_FLAGS 環境変数を追加しました。その後、すべてのフラグが組み込みのデフォルトを使用します\nゲートウェイがこのバージョン以降を実行している場合、支出制限のないクロード アプリ ゲートウェイの背後にある開発者向けに、今日、今週、今月の支出を「/usage」に追加しました",
+        "pubDate": "2026-11-07T02:04:01+09:00"
+      },
       {
         "title": "Claude Code 2.1.318（日本語）",
         "author": "Claude Code CHANGELOG",
@@ -997,12 +1003,6 @@
         "author": "Claude Code CHANGELOG",
         "text": "新しいクラウドのスケジュールされたタスクが要求していないコネクタを取得した場合の警告と、それらの削除方法を /schedule に追加しました\nWeb またはシェル ツールの呼び出しによってアカウントの電子メール アドレスがネットワークに送信される前に確認するチェックを追加しました。\nエージェント SDK フック コールバックに「onFailure: \"block\"」を追加したため、失敗したコールバックはアクションを実行せずにブロックします。\n組織のリモート管理設定がセッションに対してロードされていない場合、Claude Desktop の [コード] タブに通知を追加し、ロードされた場合には別の通知を追加しました。\n自動モードのチェックでサブエージェントのツール呼び出しに対する応答がない場合の通知を追加しました。これにより、メイン ビューには何も残されませんでした。\nanthropic.plan、anthropic.seat_type、anthropic.provider、および anthropic.custom_base_url を OTel メトリクス、イベント、およびスパンに追加しました\nクロード アプリ ゲートウェイ管理 API GET /v1/organizations/analytics/cost にコスト レポートを追加しました。これにより、開発者ごと、日ごと、または IdP グループごとに、期間の合計で過去の支出を読み取ることができます。\n「admin:」が設定されたクロード アプリ ゲートウェイ上の各開発者の IdP グループの毎日の記録を追加し、「admin.identity_retention_days」の間保持され、コスト レポートでグループ化されます。",
         "pubDate": "2026-11-03T10:25:46+09:00"
-      },
-      {
-        "title": "Claude Code 2.1.316（日本語）",
-        "author": "Claude Code CHANGELOG",
-        "text": "「ultrathink」キーワードをオフにする「CLAUDE_CODE_DISABLE_ULTRATHINK」を追加しました。\nプールされたグループ予算を Claude アプリ ゲートウェイに追加しました。グループのメンバーが共有する 1 か月の予算。各メンバー独自の制限に加えて、支出制限管理 API の「pooled_budget」で設定されます。\nプライベート CA が必要とするサーバー向けに、ループ内で相互に認証するシステム相互証明書を保持するための「CLAUDE_CODE_DISABLE_LOOPED_CROSS_CERT_DROP」を追加しました。\nセッションの継承ではなく、他に名前が指定されていない場合にサブエージェントが実行されるエフォート レベルを設定するための「CLAUDE_CODE_SUBAGENT_EFFORT」を追加しました。\nClaude アプリ ゲートウェイに「manized.policy_mode:layered」を追加しました。開発者に一致するすべてのポリシーが適用され、それぞれが最初のポリシーだけでなく、その下にリストされているポリシーにマージされます。\nクロード アプリ ゲートウェイの Bedrock アップストリームに「guardrail.input_tagging」を追加しました。これは、Amazon Bedrock ガードレールのプロンプト攻撃フィルターに必要な入力タグでプロンプトをラップします。 all_messages_and_system はシステム プロンプトにもタグを付けます\n2026 年 10 月 30 日以降、Opus 4.8 の高速モードは非推奨になりました。 2026 年 11 月 30 日に削除されます。削除後、Opus 4.8 の高速モード リクエストはエラーを返し、標準の Opus 4.8 にフォールバックしません。高速化を維持するには、Opus 5.5 に移行してください。\nクロード コードが自動的に終了する場合（認証情報が拒否された場合やクラウド セッションがアーカイブされた場合など）、macOS および Linux 上でシェル コマンドが実行されたままになる問題を修正しました。",
-        "pubDate": "2026-10-31T10:01:35+09:00"
       }
     ];
 
@@ -1055,13 +1055,13 @@
       }
     ];
 
-    // update-release-notes skill が書き換える（2026-11-04 時点の内容。最新版の英語の CHANGELOG の先頭 8 項目。TODO-041）
+    // update-release-notes skill が書き換える（2026-11-07 時点の内容。最新版の英語の CHANGELOG の先頭 8 項目。TODO-041）
     const FALLBACK_CLAUDE_CODE = [
       {
-        "title": "Claude Code 2.1.318",
+        "title": "Claude Code 2.1.319",
         "author": "Claude Code CHANGELOG",
-        "text": "Added a record of your answer when Claude Code asks to turn on the mods it writes in a session\nAdded assume_role on mantle upstreams of the Claude apps gateway, for a role in another AWS account and for per-developer AWS cost attribution\nAdded an effort option to a mod's $.model.fork, so a quick side job can run at low whatever effort the session uses; the result reports the effort sent\nAdded the date a stored claude.ai sign-in ends to claude auth status (loginExpiresAt) and to claude -p JSON results (credential_expires_at)\nAdded a one-line stderr warning to claude -p text output, starting 10 days before a stored claude.ai sign-in ends\nFixed --continue sometimes losing the earlier conversation after a malformed tool call's retries ran out (regression in 2.1.314)\nFixed macOS sessions with many running Bash commands stalling while memory grew\nFixed permission prompts being answered by keys typed just after sending a message, or before a slow prompt appeared",
-        "pubDate": "2026-11-04T09:01:03+09:00"
+        "text": "Changed auto mode with telemetry or feature flags off, including behind LLM gateways: calls the server can't check are asked about or denied, with no fallback to the built-in classifier; set CLAUDE_CODE_AUTO_MODE_SERVER=0 to keep using it (Bedrock, Vertex and Foundry are unchanged)\nChanged auto mode behind an LLM gateway: CLAUDE_CODE_AUTO_MODE_SERVER=1 turns on the server-side check even with CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS set; if managed settings set the latter, they must set the 1 too\nAdded support for MCP tasks in the terminal: when an MCP server runs a tool call as a task, Claude Code moves it to the background right away and tells Claude the result when it finishes\nAdded the CLAUDE_CODE_DISABLE_MCP_TASK_BACKGROUND environment variable to make Claude Code wait for an MCP task inside its tool call instead of moving it to the background right away\nAdded permissions.denyInsteadOfPrompting setting: a tool call that would wait on a permission prompt is denied and the turn continues, in terminal sessions, subagents and teammates\nAdded /claude-api latency-optimize to find where your Claude API code makes people wait and try faster settings against your eval\nAdded the CLAUDE_CODE_DISABLE_FEATURE_FLAGS environment variable, which stops feature-flag fetching without turning off telemetry; every flag then uses its built-in default\nAdded spend for today, this week and this month to /usage for developers behind a Claude apps gateway who have no spend limit, when the gateway runs this version or later",
+        "pubDate": "2026-11-07T02:04:01+09:00"
       }
     ];
 
